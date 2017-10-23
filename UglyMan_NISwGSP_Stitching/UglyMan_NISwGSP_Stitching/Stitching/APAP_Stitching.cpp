@@ -8,6 +8,7 @@
 
 #include "APAP_Stitching.h"
 
+// APAP算法实现
 void APAP_Stitching::apap_project(const vector<Point2> & _p_src,
                                   const vector<Point2> & _p_dst,
                                   const vector<Point2> & _src,
@@ -15,6 +16,7 @@ void APAP_Stitching::apap_project(const vector<Point2> & _p_src,
                                   vector<Mat>          & _homographies) {
     vector<Point2> nf1, nf2, cf1, cf2;
     Mat N1, N2, C1, C2;
+    // 将所有特征点归一化
     N1 = getNormalize2DPts(_p_src, nf1);
     N2 = getNormalize2DPts(_p_dst, nf2);
     C1 = getConditionerFromPts(nf1);
@@ -30,7 +32,7 @@ void APAP_Stitching::apap_project(const vector<Point2> & _p_src,
     }
     double sigma_inv_2 = 1. / (APAP_SIGMA * APAP_SIGMA), gamma = APAP_GAMMA;
     MatrixXd A = MatrixXd::Zero(cf1.size() * DIMENSION_2D,
-                                HOMOGRAPHY_VARIABLES_COUNT);
+                                HOMOGRAPHY_VARIABLES_COUNT);    // 初始化一个
     
 #ifndef NDEBUG
     if(_dst.empty() == false) {
@@ -48,6 +50,7 @@ void APAP_Stitching::apap_project(const vector<Point2> & _p_src,
         for(int j = 0; j < _p_src.size(); ++j) {
             Point2 d = _src[i] - _p_src[j];
             double www = MAX(gamma, exp(-sqrt(d.x * d.x + d.y * d.y) * sigma_inv_2));
+            //  DLT算法
             A(2*j  , 0) = www * cf1[j].x;
             A(2*j  , 1) = www * cf1[j].y;
             A(2*j  , 2) = www * 1;

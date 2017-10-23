@@ -16,4 +16,11 @@ Mat getImageOfFeaturePairs(const Mat & img1,
                            const vector<Point2> & f1,
                            const vector<Point2> & f2);
 
+// show the matching points
+Mat getImageOfOverlappedMatchingPoints(const Mat & img1,
+                                       const Mat & img2,
+                                       const vector<Point2> & originPts,
+                                       const vector<Point2> & matchingPts,
+                                       const vector<bool> & mask1);
+
 #endif /* defined(__UglyMan_Stitiching__ImageDebugger__) */

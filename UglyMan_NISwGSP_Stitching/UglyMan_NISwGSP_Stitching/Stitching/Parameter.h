@@ -22,7 +22,7 @@ public:
     string file_name, file_dir;
     string stitching_parse_file_name;
     
-    string result_dir, debug_dir;
+    string result_dir, debug_dir, temp_dir; // add a new temp_dir to store the intermediate result
     vector<string> image_file_full_names;
     /* configure */
     int grid_size;

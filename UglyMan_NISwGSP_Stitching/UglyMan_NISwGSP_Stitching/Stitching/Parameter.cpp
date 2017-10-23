@@ -55,8 +55,11 @@ Parameter::Parameter(const string & _file_name) {
     mkdir(result_dir.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #ifndef NDEBUG
     debug_dir = "./input-42-data/1_debugs/" + _file_name + "-result/";
+    temp_dir = "./input-42-data/2_temps/" + _file_name + "-reuslt/";
     mkdir("./input-42-data/1_debugs/", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
     mkdir(debug_dir.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    mkdir("./input-42-data/2_temps/", S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+    mkdir(temp_dir.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 #endif
     
     stitching_parse_file_name = file_dir + _file_name + "-STITCH-GRAPH.txt";
@@ -128,6 +131,7 @@ Parameter::Parameter(const string & _file_name) {
     }
 }
 
+// 获取图片匹配关系图
 const vector<vector<bool> > & Parameter::getImagesMatchGraph() const {
     if(images_match_graph_manually.empty()) {
         printError("F(getImagesMatchGraph) image match graph verification [2] didn't be implemented yet");
@@ -136,6 +140,7 @@ const vector<vector<bool> > & Parameter::getImagesMatchGraph() const {
     return images_match_graph_manually;
 }
 
+// 获取图片匹配列表
 const vector<pair<int, int> > & Parameter::getImagesMatchGraphPairList() const {
     if(images_match_graph_pair_list.empty()) {
         const vector<vector<bool> > & images_match_graph = getImagesMatchGraph();

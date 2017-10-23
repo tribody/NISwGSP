@@ -18,6 +18,7 @@ Mesh2D::~Mesh2D() {
     
 }
 
+// 后去nh * n2个网格的中心点
 const vector<Point2> & Mesh2D::getPolygonsCenter() const {
     if(polygons_center.empty()) {
         const vector<Point2> & vertices = getVertices();
@@ -34,6 +35,7 @@ const vector<Point2> & Mesh2D::getPolygonsCenter() const {
     return polygons_center;
 }
 
+// 判断点在哪个网格中，返回网格索引
 template <typename T>
 int Mesh2D::getGridIndexOfPoint(const Point_<T> & _p) const {
     Point2i grid_p(_p.x / lw, _p.y / lh);

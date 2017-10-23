@@ -63,7 +63,7 @@ private:
 class MultiImages {
 public:
     MultiImages(const string & _file_name,
-                LINES_FILTER_FUNC * _width_filter  = &LINES_FILTER_NONE,
+                LINES_FILTER_FUNC * _width_filter  = &LINES_FILTER_NONE,    //传入了两个函数指针，用来检测直线的长宽，达到要求返回true，否则返回false
                 LINES_FILTER_FUNC * _length_filter = &LINES_FILTER_NONE);
     
     const vector<detail::ImageFeatures> & getImagesFeaturesByMatchingPoints() const;
@@ -81,6 +81,9 @@ public:
     
     const vector<vector<InterpolateVertex> > & getInterpolateVerticesOfMatchingPoints() const;
     
+    //***选中直线的网格插值
+    const vector<vector<LineSegmentInterpolateVertex> > & getInterpolateVerticesOfSelectedLines() const;
+    
     const vector<int> & getImagesVerticesStartIndex() const;
     const vector<SimilarityElements> & getImagesSimilarityElements(const enum GLOBAL_ROTATION_METHODS & _global_rotation_method) const;
     const vector<vector<pair<double, double> > > & getImagesRelativeRotationRange() const;
@@ -91,7 +94,7 @@ public:
     
     const vector<Mat> & getImages() const;
     
-    FLOAT_TYPE getImagesMinimumLineDistortionRotation(const int _from, const int _to) const;
+    FLOAT_TYPE getImagesMinimumLineDistortionRotation(const int _from, const int _to) const;    // MLDR
     
     Mat textureMapping(const vector<vector<Point2> > & _vertices,
                        const Size2 & _target_size,
@@ -139,8 +142,13 @@ private:
     mutable vector<vector<vector<Mat> > >    apap_homographies;
     mutable vector<vector<vector<Point2> > > apap_matching_points;
     
+    // ***直线结构保护优化项，标记需要保护的直线
+    mutable vector<vector<vector<Point2 > > > selected_image_lines;    /* [m1][i], img1 i_th lines */
+    
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_feature_pts;
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_matching_pts;
+    //***直线结构优化项，需要保护的直线网格插值
+    mutable vector<vector<LineSegmentInterpolateVertex> > mesh_interpolate_vertex_of_selected_lines;
     
     mutable vector<int> images_vertices_start_index;
     mutable vector<SimilarityElements> images_similarity_elements_2D;

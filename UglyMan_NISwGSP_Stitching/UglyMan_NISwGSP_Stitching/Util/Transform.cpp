@@ -8,13 +8,14 @@
 
 #include "Transform.h"
 
+// 
 Mat getConditionerFromPts(const vector<Point2> & pts) {
     Mat pts_ref(pts);
     Scalar mean_pts, std_pts;
     meanStdDev(pts_ref, mean_pts, std_pts);
     
     std_pts = (std_pts.mul(std_pts) * pts_ref.rows / (double)(pts_ref.rows - 1));
-    sqrt(std_pts, std_pts);
+    sqrt(std_pts, std_pts); // 标准差
     
     std_pts.val[0] = std_pts.val[0] + (std_pts.val[0] == 0);
     std_pts.val[1] = std_pts.val[1] + (std_pts.val[1] == 0);
@@ -34,13 +35,14 @@ Mat getConditionerFromPts(const vector<Point2> & pts) {
     
     return result;
 }
+// 归一化点集，返回归一化矩阵
 Mat getNormalize2DPts(const vector<Point2> & pts, vector<Point2> & newpts) {
     Mat pts_ref(pts), npts;
     Scalar mean_p = mean(pts_ref);
     npts = pts_ref - mean_p;
     Mat dist = npts.mul(npts);
-    dist = dist.reshape(1);
-    sqrt(dist.col(0) + dist.col(1), dist);
+    dist = dist.reshape(1); // 维数的变换 320 * 1 2channels to 320 * 2
+    sqrt(dist.col(0) + dist.col(1), dist); // 标准差向量
     double scale = sqrt(2) / mean(dist).val[0];
     
     Mat result(3, 3, CV_64FC1);
@@ -153,6 +155,7 @@ Vec<T, n> getSubpix(const Mat & img, const Point2f & pt) {
     return patch.at<Vec<T, n> >(0,0);
 }
 
+// 得到旋转矩阵的欧拉旋转角，注意角度的旋转顺序
 template <typename T>
 Vec<T, 3> getEulerZXYRadians(const Mat_<T> & rot_matrix) {
     const T r00 = rot_matrix.template at<T>(0, 0);
@@ -182,6 +185,7 @@ Vec<T, 3> getEulerZXYRadians(const Mat_<T> & rot_matrix) {
     return result;
 }
 
+// scale是做什么的？点被边界阶段的比例
 template <typename T>
 bool isEdgeIntersection(const Point_<T> & src_1, const Point_<T> & dst_1,
                         const Point_<T> & src_2, const Point_<T> & dst_2,

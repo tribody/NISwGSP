@@ -26,11 +26,15 @@ void NISwGSP_Stitching::setWeightToGlobalSimilarityTerm(const double _weight_bet
     MeshOptimization::setWeightToGlobalSimilarityTerm(_weight_beta, _weight_gamma, _global_rotation_method);
 }
 
+void NISwGSP_Stitching::setWeightToLinePreserveTerm(const double _weight) {
+    MeshOptimization::setWeightToLinePreserveTerm(_weight);
+}
+
 Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
     const MultiImages & multi_images = getMultiImages();
     
-    vector<Triplet<double> > triplets;
-    vector<pair<int, double> > b_vector;
+    vector<Triplet<double> > triplets;      // triplets（三元数）代表优化项，存储优化项在矩阵中的行列坐标和值，即稀疏矩阵的各项
+    vector<pair<int, double> > b_vector;    // b_vector（pair<int, double>)代表Ax=b右向量，存储行坐标和值即优化目标，
     
     reserveData(triplets, b_vector, DIMENSION_2D);
     
@@ -39,14 +43,15 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
     b_vector.emplace_back(0,    STRONG_CONSTRAINT);
     b_vector.emplace_back(1,    STRONG_CONSTRAINT);
     
-    prepareAlignmentTerm(triplets);
-    prepareSimilarityTerm(triplets, b_vector);
+    prepareAlignmentTerm(triplets); // 实际上是用feature pairs而不是用的mesh pairs
+    prepareSimilarityTerm(triplets, b_vector);  // 准备全局相似项和局部相似项
+    prepareLinePreserveTerm(triplets, b_vector); // 准备全局直线结构保护箱
     
     vector<vector<Point2> > original_vertices;
 
-    original_vertices = getImageVerticesBySolving(triplets, b_vector);
+    original_vertices = getImageVerticesBySolving(triplets, b_vector);  // 解稀疏矩阵，求最优点集
     
-    Size2 target_size = normalizeVertices(original_vertices);
+    Size2 target_size = normalizeVertices(original_vertices);   // 归一化点集
     
     Mat result = multi_images.textureMapping(original_vertices, target_size, _blend_method);
 #ifndef NDEBUG

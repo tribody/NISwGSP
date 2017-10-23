@@ -12,6 +12,7 @@ void FeatureDescriptor::addDescriptor(const Mat & _descriptor) {
     data.emplace_back(_descriptor);
 }
 
+// 求取特征描述子之间的欧氏距离
 double FeatureDescriptor::getDistance(const FeatureDescriptor & _descriptor1,
                                       const FeatureDescriptor & _descriptor2,
                                       const double _threshold) {
@@ -37,6 +38,7 @@ double FeatureDescriptor::getDistance(const FeatureDescriptor & _descriptor1,
     return result;
 }
 
+// 真正的特征点检测算法
 void FeatureController::detect(const Mat & _grey_img,
                                vector<Point2> & _feature_points,
                                vector<FeatureDescriptor> & _feature_descriptors) {

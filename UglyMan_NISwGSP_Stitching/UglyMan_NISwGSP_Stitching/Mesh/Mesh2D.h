@@ -44,6 +44,7 @@ public:
 private:
 };
 
+// 顶点的网格插值
 class InterpolateVertex {
 public:
     int polygon;
@@ -65,6 +66,25 @@ public:
     InterpolateVertex(const int _polygon,
                       const vector<double> & _weights) {
         polygon = _polygon;
+        weights = _weights;
+    }
+private:
+};
+
+// 直线采样索引点集，存放直线采样点的网格插值和采样点在直线上的权重
+class LineSegmentInterpolateVertex {
+public:
+    vector<InterpolateVertex> line_points_interpolateVertex;
+    vector<int> weights;
+    
+    LineSegmentInterpolateVertex(){}
+    LineSegmentInterpolateVertex(const LineSegmentInterpolateVertex & _lsiv) {
+        line_points_interpolateVertex = _lsiv.line_points_interpolateVertex;
+        weights = _lsiv.weights;
+    }
+    LineSegmentInterpolateVertex(const vector<InterpolateVertex> & _line_points_interpolateVertex,
+                                 const vector<int> & _weights) {
+        line_points_interpolateVertex = _line_points_interpolateVertex;
         weights = _weights;
     }
 private:

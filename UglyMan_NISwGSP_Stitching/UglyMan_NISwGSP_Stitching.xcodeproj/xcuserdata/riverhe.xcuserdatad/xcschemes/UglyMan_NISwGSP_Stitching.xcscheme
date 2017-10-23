@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "AANAP-building"
+            argument = "SPHP-building"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

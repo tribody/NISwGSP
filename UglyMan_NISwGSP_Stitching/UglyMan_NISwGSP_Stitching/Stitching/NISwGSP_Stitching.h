@@ -20,6 +20,7 @@ public:
     void setWeightToGlobalSimilarityTerm(const double _weight_beta,
                                          const double _weight_gamma,
                                          const enum GLOBAL_ROTATION_METHODS _global_rotation_method);
+    void setWeightToLinePreserveTerm(const double _weight);
     
     void writeImage(const Mat & _image, const string _post_name) const;
     

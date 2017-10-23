@@ -78,6 +78,10 @@ const double TOLERANT_ANGLE = 1.5;
 /*** 3D Method ***/
 const double LAMBDA_GAMMA = 10;
 
+/*** lines_preserve_term ***/
+const double LINES_THRESHOLD = 80.0;    /* used for automatic long lines selecting */
+const double LINES_INTERVAL = 10.0;     /* lines sampling interval */
+
 /******************************/
 /******************************/
 /******************************/
@@ -112,5 +116,7 @@ const int HOMOGRAPHY_VARIABLES_COUNT = 9;
 enum  AUTO_STITCH_WAVE_CORRECTS { WAVE_X = 0, WAVE_H, WAVE_V };
 const AUTO_STITCH_WAVE_CORRECTS   WAVE_CORRECT = WAVE_H;
 const string AUTO_STITCH_WAVE_CORRECTS_NAME[] = {"", "[WAVE_H]", "[WAVE_V]"};
+
+/* control the macro */
 
 #endif /* defined(__UglyMan_Stitiching__Configure__) */

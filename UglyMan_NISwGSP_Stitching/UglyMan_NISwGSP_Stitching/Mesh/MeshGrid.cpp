@@ -14,6 +14,7 @@ MeshGrid::MeshGrid(const int _cols, const int _rows) : Mesh2D(_cols, _rows) {
     
 }
 
+// 获取所有的顶点
 const vector<Point2> & MeshGrid::getVertices() const {
     if(vertices.empty()) {
         const int memory = (nh + 1) * (nw + 1);
@@ -28,6 +29,7 @@ const vector<Point2> & MeshGrid::getVertices() const {
     return vertices;
 }
 
+// 获取所有的边， 2 * 网格数 + 长宽上的边数
 const vector<Edge> & MeshGrid::getEdges() const {
     if(edges.empty()) {
         const vector<Point2i> nexts = { Point2i(1, 0), Point2i(0, 1) };
@@ -49,6 +51,7 @@ const vector<Edge> & MeshGrid::getEdges() const {
     }
     return edges;
 }
+// 得到nh * nw个顶点顺时针（在图像所标系中）方向网格点（4个）在顶点集中的索引，(0,0)->(1,0)->(1,1)->(0,1)
 const vector<Indices> & MeshGrid::getPolygonsIndices() const {
     if(polygons_indices.empty()) {
         const Point2i nexts[GRID_VERTEX_SIZE] = {
@@ -72,6 +75,8 @@ const vector<Indices> & MeshGrid::getPolygonsIndices() const {
     }
     return polygons_indices;
 }
+
+// 得到nh * nw个网格逆时针四个方向各个相邻网格（2~4个）在网格集中的索引，(1,0)->(0,1)->(-1,0)->(0,-1)
 const vector<Indices> & MeshGrid::getPolygonsNeighbors() const {
     if(polygons_neighbors.empty()) {
         const vector<Point2i> nexts = {
@@ -173,7 +178,7 @@ const vector<Indices> & MeshGrid::getEdgeStructures() const {
     }
     return edge_structures;
 }
-
+// 网格切分为三角形的索引
 const vector<Indices> & MeshGrid::getTriangulationIndices() const {
     if(triangulation_indices.empty()) {
         triangulation_indices.emplace_back(0, 1, 2);
@@ -229,12 +234,13 @@ const vector<int> & MeshGrid::getBoundaryEdgeIndices() const {
     return boundary_edge_indices;
 }
 
+// 获取一个点的在某个（grid_index）网格中的插值权重（weights，按顺时针方向）
 template <typename T>
 InterpolateVertex MeshGrid::getInterpolateVertexTemplate(const Point_<T> & _p) const {
-    const vector<Point2> & vertices = getVertices();
-    const vector<Indices> & grids = getPolygonsIndices();
+    const vector<Point2> & vertices = getVertices();    // 获取顶点集
+    const vector<Indices> & grids = getPolygonsIndices();   // 获取顶点网格的索引
     
-    const int grid_index = getGridIndexOfPoint(_p);
+    const int grid_index = getGridIndexOfPoint(_p); // 返回点所在网格索引
     
     const Indices & g = grids[grid_index];
     

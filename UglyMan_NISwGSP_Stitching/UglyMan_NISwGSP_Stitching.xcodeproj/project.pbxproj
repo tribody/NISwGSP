@@ -43,6 +43,7 @@
 		4EF0FBE31E91AB49004EF57E /* InputParser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4EF0FBCE1E91AB49004EF57E /* InputParser.cpp */; };
 		4EF0FBE41E91AB49004EF57E /* Statistics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4EF0FBD01E91AB49004EF57E /* Statistics.cpp */; };
 		4EF0FBE51E91AB49004EF57E /* Transform.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4EF0FBD21E91AB49004EF57E /* Transform.cpp */; };
+		581D12831F9454C600C5935C /* StringTools.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 581D12811F9454C200C5935C /* StringTools.cpp */; };
 		584446D61F127A8F008EFDC2 /* libvl.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E5CD02A1D3362D200811CB5 /* libvl.dylib */; };
 		584446D81F12F9E6008EFDC2 /* libiomp5.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 584446D41F127A80008EFDC2 /* libiomp5.dylib */; };
 /* End PBXBuildFile section */
@@ -115,6 +116,8 @@
 		4EF0FBD11E91AB49004EF57E /* Statistics.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Statistics.h; sourceTree = "<group>"; };
 		4EF0FBD21E91AB49004EF57E /* Transform.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Transform.cpp; sourceTree = "<group>"; };
 		4EF0FBD31E91AB49004EF57E /* Transform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Transform.h; sourceTree = "<group>"; };
+		581D12811F9454C200C5935C /* StringTools.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = StringTools.cpp; sourceTree = "<group>"; };
+		581D12821F9454C200C5935C /* StringTools.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = StringTools.h; sourceTree = "<group>"; };
 		584446D41F127A80008EFDC2 /* libiomp5.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libiomp5.dylib; sourceTree = "<group>"; };
 		584446D91F12FE21008EFDC2 /* UglyMan_NISwGSP_Stitching */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = UglyMan_NISwGSP_Stitching; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -279,6 +282,8 @@
 				4EF0FBD11E91AB49004EF57E /* Statistics.h */,
 				4EF0FBD21E91AB49004EF57E /* Transform.cpp */,
 				4EF0FBD31E91AB49004EF57E /* Transform.h */,
+				581D12811F9454C200C5935C /* StringTools.cpp */,
+				581D12821F9454C200C5935C /* StringTools.h */,
 			);
 			name = Util;
 			path = UglyMan_NISwGSP_Stitching/Util;
@@ -352,6 +357,7 @@
 				4EF0FBDA1E91AB49004EF57E /* MultiImages.cpp in Sources */,
 				4EF0FBDF1E91AB49004EF57E /* APAP_Stitching.cpp in Sources */,
 				4EF0FBD81E91AB49004EF57E /* FeatureController.cpp in Sources */,
+				581D12831F9454C600C5935C /* StringTools.cpp in Sources */,
 				4EF0FBD51E91AB49004EF57E /* ErrorController.cpp in Sources */,
 				4EF0FBDC1E91AB49004EF57E /* Mesh2D.cpp in Sources */,
 				4EF0FBDB1E91AB49004EF57E /* main.cpp in Sources */,

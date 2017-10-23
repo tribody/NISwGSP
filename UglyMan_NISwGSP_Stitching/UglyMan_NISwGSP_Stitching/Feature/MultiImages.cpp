@@ -18,7 +18,8 @@ MultiImages::MultiImages(const string & _file_name,
                                  parameter.image_file_full_names[i],
                                  _width_filter,
                                  _length_filter,
-                                 &parameter.debug_dir);
+                                 &parameter.debug_dir,
+                                 &parameter.temp_dir);
 #else
         images_data.emplace_back(parameter.file_dir,
                                  parameter.image_file_full_names[i],
@@ -28,7 +29,9 @@ MultiImages::MultiImages(const string & _file_name,
     }
 }
 
+// 真正的特征检测在这里
 void MultiImages::doFeatureMatching() const {
+    // 初始化工作，分配内存
     const vector<pair<int, int> > & images_match_graph_pair_list = parameter.getImagesMatchGraphPairList();
     
     images_features.resize(images_data.size());
@@ -37,7 +40,7 @@ void MultiImages::doFeatureMatching() const {
         const vector<Point2> & vertices = images_data[i].mesh_2d->getVertices();
         images_features_mask[i].resize(vertices.size(), false);
         for(int j = 0; j < vertices.size(); ++j) {
-            images_features[i].keypoints.emplace_back(vertices[j], 0);
+            images_features[i].keypoints.emplace_back(vertices[j], 0);      // 把本图所有的顶点作为特征点存储到images_features中
         }
     }
     pairwise_matches.resize(images_data.size() * images_data.size());
@@ -50,6 +53,7 @@ void MultiImages::doFeatureMatching() const {
         apap_overlap_mask[i].resize(images_data.size());
         apap_matching_points[i].resize(images_data.size());
     }
+    // 初始化结束，接下来完成APAP算法，并得到重叠区域的顶点集
     const vector<vector<vector<Point2> > > & feature_matches = getFeatureMatches();
     for(int i = 0; i < images_match_graph_pair_list.size(); ++i) {
         const pair<int, int> & match_pair = images_match_graph_pair_list[i];
@@ -84,7 +88,7 @@ void MultiImages::doFeatureMatching() const {
                         D_matches.emplace_back(k, images_features[m_index[j]].keypoints.size(), 0);
                         images_features_mask[m1][k] = true;
                     }
-                    images_features[m_index[j]].keypoints.emplace_back((*out_dst[j])[k], 0);
+                    images_features[m_index[j]].keypoints.emplace_back((*out_dst[j])[k], 0);        // 将图片对的另一图投影到本图的对应点作为特征点存储到images_features中
                 }
             }
         }
@@ -94,6 +98,25 @@ void MultiImages::doFeatureMatching() const {
         pairwise_matches[pm_index].inliers_mask.resize(D_matches.size(), 1);
         pairwise_matches[pm_index].num_inliers = (int)D_matches.size();
         pairwise_matches[pm_index].H = apap_homographies[m1][m2].front(); /*** for OpenCV findMaxSpanningTree funtion ***/
+        
+#ifndef NDEBUG
+        // 输出matching points在图中的匹配关系
+        const Mat & img1 = images_data[m1].img;
+        const Mat & img2 = images_data[m2].img;
+        Mat image_of_matching_pairs1 = getImageOfOverlappedMatchingPoints(img1, img2, images_data[m1].mesh_2d->getVertices(), apap_matching_points[m1][m2], apap_overlap_mask[m1][m2]);
+        imwrite(parameter.debug_dir +
+                "matching_pairs-" +
+                images_data[m1].file_name  + "-" +
+                images_data[m2].file_name  +
+                images_data[m1].file_extension, image_of_matching_pairs1);
+        Mat image_of_matching_pairs2 = getImageOfOverlappedMatchingPoints(img2, img1, images_data[m2].mesh_2d->getVertices(), apap_matching_points[m2][m1], apap_overlap_mask[m2][m1]);
+        imwrite(parameter.debug_dir +
+                "matching_pairs-" +
+                images_data[m2].file_name  + "-" +
+                images_data[m1].file_name  +
+                images_data[m2].file_extension, image_of_matching_pairs2);
+        
+#endif
     }
 }
 
@@ -104,6 +127,7 @@ const vector<detail::ImageFeatures> & MultiImages::getImagesFeaturesByMatchingPo
     return images_features;
 }
 
+// 获取每对匹配图片的匹配点对
 const vector<detail::MatchesInfo> & MultiImages::getPairwiseMatchesByMatchingPoints() const {
     if(pairwise_matches.empty()) {
         doFeatureMatching();
@@ -111,12 +135,13 @@ const vector<detail::MatchesInfo> & MultiImages::getPairwiseMatchesByMatchingPoi
     return pairwise_matches;
 }
 
+// 获取相机参数
 const vector<detail::CameraParams> & MultiImages::getCameraParams() const {
     if(camera_params.empty()) {
         camera_params.resize(images_data.size());
         /*** Focal Length ***/
-        const vector<vector<vector<bool> > > & apap_overlap_mask = getAPAPOverlapMask();
-        const vector<vector<vector<Mat> > >  & apap_homographies = getAPAPHomographies();
+        const vector<vector<vector<bool> > > & apap_overlap_mask = getAPAPOverlapMask();    // 得到重叠区域顶点遮罩
+        const vector<vector<vector<Mat> > >  & apap_homographies = getAPAPHomographies();   // 得到APAP算法得到的基于网格顶点的单应矩阵集（nh + 1) * (nw + 1)个
         
         vector<Mat> translation_matrix;
         translation_matrix.reserve(images_data.size());
@@ -136,7 +161,8 @@ const vector<detail::CameraParams> & MultiImages::getCameraParams() const {
                     if(apap_overlap_mask[i][j][k]) {
                         double f0, f1;
                         bool f0_ok, f1_ok;
-                        Mat H = translation_matrix[j].inv() * apap_homographies[i][j][k] * translation_matrix[i];
+                        Mat H = translation_matrix[j].inv() * apap_homographies[i][j][k] * translation_matrix[i];   // 去除主点偏置影响，T'.inv * H * T
+                        // focalsFromHomography这个函数估计焦距有先验条件就是，相机只能做旋转运动，无法估计带有平移运动的相机参数
                         detail::focalsFromHomography(H / H.at<double>(2, 2),
                                                      f0, f1, f0_ok, f1_ok);
                         if(f0_ok && f1_ok) {
@@ -177,7 +203,7 @@ const vector<detail::CameraParams> & MultiImages::getCameraParams() const {
             
             for(int j = 0; j < matches_info.num_inliers; ++j) {
                 Point2d p1 = Point2d(images_features[m1].keypoints[matches_info.matches[j].queryIdx].pt) -
-                             Point2d(translation_matrix[m1].at<double>(0, 2), translation_matrix[m1].at<double>(1, 2));
+                             Point2d(translation_matrix[m1].at<double>(0, 2), translation_matrix[m1].at<double>(1, 2));     // 坐标系变换，以图片正中央为参照
                 Point2d p2 = Point2d(images_features[m2].keypoints[matches_info.matches[j].trainIdx].pt) -
                              Point2d(translation_matrix[m2].at<double>(0, 2), translation_matrix[m2].at<double>(1, 2));
                 A(2*j  , 0) =  p1.x;
@@ -194,14 +220,17 @@ const vector<detail::CameraParams> & MultiImages::getCameraParams() const {
                 A(2*j+1, 7) = -p2.y *   p1.y / focal2;
                 A(2*j+1, 8) = -p2.y * focal1 / focal2;
             }
-            JacobiSVD<MatrixXd, HouseholderQRPreconditioner> jacobi_svd(A, ComputeThinV);
+            JacobiSVD<MatrixXd, HouseholderQRPreconditioner> jacobi_svd(A, ComputeThinV);   // SVD求解R旋转矩阵
             MatrixXd V = jacobi_svd.matrixV();
             Mat R(3, 3, CV_64FC1);
             for(int j = 0; j < V.rows(); ++j) {
                 R.at<double>(j / 3, j % 3) = V(j, V.rows() - 1);
             }
             SVD svd(R, SVD::FULL_UV);
-            relative_3D_rotations[m1][m2] = svd.u * svd.vt;
+//            cout << "Rt * R: " << endl << R << endl;
+//            cout << "w: " << endl << svd.w;
+            relative_3D_rotations[m1][m2] = svd.u * svd.vt;     // 为什么要这样处理？去除奇异值的影响？去除尺度影响？
+//            cout << "R: " << endl << relative_3D_rotations[m1][m2] << endl;
         }
         queue<int> que;
         vector<bool> labels(images_data.size(), false);
@@ -238,7 +267,7 @@ const vector<detail::CameraParams> & MultiImages::getCameraParams() const {
             camera_params[i].R.convertTo(camera_params[i].R, CV_32FC1);
         }
         
-        Ptr<detail::BundleAdjusterBase> adjuster = makePtr<detail::BundleAdjusterReproj>();
+        Ptr<detail::BundleAdjusterBase> adjuster = makePtr<detail::BundleAdjusterReproj>();     // 捆绑调整相机参数
         adjuster->setTermCriteria(TermCriteria(TermCriteria::EPS, CRITERIA_MAX_COUNT, CRITERIA_EPSILON));
         
         Mat_<uchar> refine_mask = Mat::zeros(3, 3, CV_8U);
@@ -305,11 +334,35 @@ const vector<vector<InterpolateVertex> > & MultiImages::getInterpolateVerticesOf
         for(int i = 0; i < mesh_interpolate_vertex_of_matching_pts.size(); ++i) {
             mesh_interpolate_vertex_of_matching_pts[i].reserve(images_features[i].keypoints.size());
             for(int j = 0; j < images_features[i].keypoints.size(); ++j) {
-                mesh_interpolate_vertex_of_matching_pts[i].emplace_back(images_data[i].mesh_2d->getInterpolateVertex(images_features[i].keypoints[j].pt));
+                mesh_interpolate_vertex_of_matching_pts[i].emplace_back(images_data[i].mesh_2d->getInterpolateVertex(images_features[i].keypoints[j].pt));  // 返回特征点在特定网格中的双线性插值（InterpolateVertex）
             }
         }
     }
     return mesh_interpolate_vertex_of_matching_pts;
+}
+
+//***得到图片选中直线的采样点网格插值集
+const vector<vector<LineSegmentInterpolateVertex> > & MultiImages::getInterpolateVerticesOfSelectedLines() const {
+    if(mesh_interpolate_vertex_of_selected_lines.empty()) {
+        mesh_interpolate_vertex_of_selected_lines.resize(images_data.size());
+        //TODO: 得到直线点的投影点，然后分别求出每张图片投影点的网格双线性插值
+        for(int i = 0; i < images_data.size(); i++) {
+            const vector<LineSegments> & selected_lines = images_data[i].getSelectedLines();
+            mesh_interpolate_vertex_of_selected_lines[i].reserve(selected_lines.size());
+            for(int j = 0; j < selected_lines.size(); j++) {
+                vector<InterpolateVertex> ilv;
+                vector<int> weights;
+                for(int k = 0; k < selected_lines[j].points.size(); k++) {
+                    ilv.emplace_back(images_data[i].mesh_2d->getInterpolateVertex(selected_lines[j].points[k]));
+                }
+                for(int k = 1; k < selected_lines[j].points.size()-1; k++) {
+                    weights.emplace_back(selected_lines[j].step * k / selected_lines[j].length);
+                }
+                mesh_interpolate_vertex_of_selected_lines[i].emplace_back(ilv, weights);
+            }
+        }
+    }
+    return mesh_interpolate_vertex_of_selected_lines;
 }
 
 const vector<int> & MultiImages::getImagesVerticesStartIndex() const {
@@ -324,6 +377,7 @@ const vector<int> & MultiImages::getImagesVerticesStartIndex() const {
     return images_vertices_start_index;
 }
 
+// 得到相似项
 const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(const enum GLOBAL_ROTATION_METHODS & _global_rotation_method) const {
     const vector<vector<SimilarityElements> *> & images_similarity_elements = {
         &images_similarity_elements_2D, &images_similarity_elements_3D
@@ -331,10 +385,10 @@ const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(cons
     vector<SimilarityElements> & result = *images_similarity_elements[_global_rotation_method];
     if(result.empty()) {
         result.reserve(images_data.size());
-        const vector<detail::CameraParams> & camera_params = getCameraParams();
+        const vector<detail::CameraParams> & camera_params = getCameraParams();     // 获取相机参数
         for(int i = 0; i < images_data.size(); ++i) {
             result.emplace_back(fabs(camera_params[parameter.center_image_index].focal / camera_params[i].focal),
-                                -getEulerZXYRadians<float>(camera_params[i].R)[2]);
+                                -getEulerZXYRadians<float>(camera_params[i].R)[2]);     // 获取图片的相对尺度大小以及相对于Z轴旋转的欧拉角的大小
         }
         double rotate_theta = parameter.center_image_rotation_angle;
         for(int i = 0; i < images_data.size(); ++i) {
@@ -343,8 +397,9 @@ const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(cons
         }
         
         const vector<pair<int, int> > & images_match_graph_pair_list = parameter.getImagesMatchGraphPairList();
-        const vector<vector<pair<double, double> > > & images_relative_rotation_range = getImagesRelativeRotationRange();
-
+        const vector<vector<pair<double, double> > > & images_relative_rotation_range = getImagesRelativeRotationRange();       // 获取图片之间的旋转角度范围
+        
+        // 旋转角度选择算法，真正的核心
         switch (_global_rotation_method) {
             case GLOBAL_ROTATION_2D_METHOD:
             {
@@ -358,7 +413,7 @@ const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(cons
                     
                 };
                 const double TOLERANT_THETA = TOLERANT_ANGLE * M_PI / 180;
-                vector<pair<int, double> > theta_constraints;
+                vector<pair<int, double> > theta_constraints;       // theta正则项（限制项），旋转角度为0的图片集
                 vector<bool> decided(images_data.size(), false);
                 vector<RotationNode> priority_que;
                 theta_constraints.emplace_back(parameter.center_image_index, result[parameter.center_image_index].theta);
@@ -370,7 +425,7 @@ const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(cons
                     priority_que.erase(priority_que.begin());
                     if(!decided[node.index]) {
                         decided[node.index] = true;
-                        result[node.index].theta = result[node.parent].theta + getImagesMinimumLineDistortionRotation(node.parent, node.index);
+                        result[node.index].theta = result[node.parent].theta + getImagesMinimumLineDistortionRotation(node.parent, node.index);     // 获取MLDR旋转角
                     }
                     for(int i = 0; i < decided.size(); ++i) {
                         if(!decided[i]) {
@@ -483,6 +538,7 @@ const vector<SimilarityElements> & MultiImages::getImagesSimilarityElements(cons
     return result;
 }
 
+// 计算相对旋转角度范围
 const vector<vector<pair<double, double> > > & MultiImages::getImagesRelativeRotationRange() const {
     if(images_relative_rotation_range.empty()) {
         images_relative_rotation_range.resize(images_data.size());
@@ -516,9 +572,9 @@ const vector<vector<pair<double, double> > > & MultiImages::getImagesRelativeRot
                         const double direction = a.x * b.y - a.y * b.x;
                         int map = ((direction > 0) << 1) + j;
                         if(sign_mapping[map]) {
-                            positive.emplace_back( theta);
+                            positive.emplace_back( theta);  // 正向角
                         } else {
-                            negative.emplace_back(-theta);
+                            negative.emplace_back(-theta);  // 负向角
                         }
                     }
                 }
@@ -555,6 +611,7 @@ const vector<vector<pair<double, double> > > & MultiImages::getImagesRelativeRot
     return images_relative_rotation_range;
 }
 
+// MLDR算法
 FLOAT_TYPE MultiImages::getImagesMinimumLineDistortionRotation(const int _from, const int _to) const {
     if(images_minimum_line_distortion_rotation.empty()) {
         images_minimum_line_distortion_rotation.resize(images_data.size());
@@ -563,9 +620,9 @@ FLOAT_TYPE MultiImages::getImagesMinimumLineDistortionRotation(const int _from, 
         }
     }
     if(images_minimum_line_distortion_rotation[_from][_to] == MAXFLOAT) {
-        const vector<LineData> & from_lines   = images_data[_from].getLines();
+        const vector<LineData> & from_lines   = images_data[_from].getLines();          // 获取直线特征
         const vector<LineData> &   to_lines   = images_data[_to  ].getLines();
-        const vector<Point2>   & from_project = getImagesLinesProject(_from, _to);
+        const vector<Point2>   & from_project = getImagesLinesProject(_from, _to);      // 获取直线的投影
         const vector<Point2>   &   to_project = getImagesLinesProject(_to, _from);
         
         const vector<const vector<LineData> *> & lines    = { &from_lines,   &to_lines   };
@@ -598,7 +655,7 @@ FLOAT_TYPE MultiImages::getImagesMinimumLineDistortionRotation(const int _from, 
                     for(int k = 0; k < boundary_edgs.size(); ++k) {
                         double s1;
                         if(isEdgeIntersection(p1, p2, boundary_edgs[k].first, boundary_edgs[k].second, &s1)) {
-                            scales.emplace_back(s1);
+                            scales.emplace_back(s1);    // scale，点被边界阶段的比例
                         }
                     }
                     assert(scales.size() <= EDGE_VERTEX_SIZE);
@@ -627,7 +684,7 @@ FLOAT_TYPE MultiImages::getImagesMinimumLineDistortionRotation(const int _from, 
                 const int map = ((direction > 0) << 1) + i;
                 const double b_length_2 = sqrt(b.x * b.x + b.y * b.y);
                 theta_weight_pairs.emplace_back(theta * sign_mapping[map],
-                                                (*lines[i])[j].length * (*lines[i])[j].width * b_length_2);
+                                                (*lines[i])[j].length * (*lines[i])[j].width * b_length_2);     // 权重 = 原直线的长度 * 直线的宽度 * 投影直线的长度
             }
         }
         Point2 dir(0, 0);
@@ -641,6 +698,7 @@ FLOAT_TYPE MultiImages::getImagesMinimumLineDistortionRotation(const int _from, 
     return images_minimum_line_distortion_rotation[_from][_to];
 }
 
+// 获取_from特征直线投影到_to上的直线点集
 const vector<Point2> & MultiImages::getImagesLinesProject(const int _from, const int _to) const {
     if(images_lines_projects.empty()) {
         images_lines_projects.resize(images_data.size());
@@ -689,19 +747,20 @@ public:
 const vector<vector<double> > & MultiImages::getImagesGridSpaceMatchingPointsWeight(const double _global_weight_gamma) const {
     if(_global_weight_gamma && images_polygon_space_matching_pts_weight.empty()) {
         images_polygon_space_matching_pts_weight.resize(images_data.size());
-        const vector<vector<bool > > & images_features_mask = getImagesFeaturesMaskByMatchingPoints();
-        const vector<vector<InterpolateVertex> > & mesh_interpolate_vertex_of_matching_pts = getInterpolateVerticesOfMatchingPoints();
+        const vector<vector<bool > > & images_features_mask = getImagesFeaturesMaskByMatchingPoints();      // 重叠区域网格点mask
+        const vector<vector<InterpolateVertex> > & mesh_interpolate_vertex_of_matching_pts = getInterpolateVerticesOfMatchingPoints();  // 网格点和匹配图投影到本土的点的网格内插点集
         for(int i = 0; i < images_polygon_space_matching_pts_weight.size(); ++i) {
-            const int polygons_count = (int)images_data[i].mesh_2d->getPolygonsIndices().size();
-            vector<bool> polygons_has_matching_pts(polygons_count, false);
+            const int polygons_count = (int)images_data[i].mesh_2d->getPolygonsIndices().size();    // 网格数量
+            vector<bool> polygons_has_matching_pts(polygons_count, false);                          // 网格是否在重叠区域，即网格是否含有matching points
             for(int j = 0; j < images_features_mask[i].size(); ++j) {
                 if(images_features_mask[i][j]) {
                     polygons_has_matching_pts[mesh_interpolate_vertex_of_matching_pts[i][j].polygon] = true;
                 }
             }
-            images_polygon_space_matching_pts_weight[i].reserve(polygons_count);
-            priority_queue<dijkstraNode> que;
+            images_polygon_space_matching_pts_weight[i].reserve(polygons_count);    // 所有网格的权重
+            priority_queue<dijkstraNode> que;       // 存储有特征点的网格的索引
             
+            // 初始化，在重叠区域（或者说有matching points）的网格，权重初始化为0， 其余网格权重初始化为max
             for(int j = 0; j < polygons_has_matching_pts.size(); ++j) {
                 if(polygons_has_matching_pts[j]) {
                     polygons_has_matching_pts[j] = false;
@@ -711,8 +770,8 @@ const vector<vector<double> > & MultiImages::getImagesGridSpaceMatchingPointsWei
                     images_polygon_space_matching_pts_weight[i].emplace_back(MAXFLOAT);
                 }
             }
-            const vector<Indices> & polygons_neighbors = images_data[i].mesh_2d->getPolygonsNeighbors();
-            const vector<Point2> & polygons_center = images_data[i].mesh_2d->getPolygonsCenter();
+            const vector<Indices> & polygons_neighbors = images_data[i].mesh_2d->getPolygonsNeighbors();    // 所有网格相邻网格的索引集
+            const vector<Point2> & polygons_center = images_data[i].mesh_2d->getPolygonsCenter();           // 所有网格中心点位置
             while(que.empty() == false) {
                 const dijkstraNode now = que.top();
                 const int index = now.pos;
@@ -747,6 +806,7 @@ void MultiImages::initialFeaturePairsSpace() const {
     }
 }
 
+//
 const vector<vector<vector<pair<int, int> > > > & MultiImages::getFeaturePairs() const {
     if(feature_pairs.empty()) {
         initialFeaturePairsSpace();
@@ -757,6 +817,7 @@ const vector<vector<vector<pair<int, int> > > > & MultiImages::getFeaturePairs()
             const vector<Point2> & m1_fpts = images_data[match_pair.first ].getFeaturePoints();
             const vector<Point2> & m2_fpts = images_data[match_pair.second].getFeaturePoints();
             vector<Point2> X, Y;
+            // 获得初始匹配点对的
             X.reserve(initial_indices.size());
             Y.reserve(initial_indices.size());
             for(int j = 0; j < initial_indices.size(); ++j) {
@@ -768,17 +829,18 @@ const vector<vector<vector<pair<int, int> > > > & MultiImages::getFeaturePairs()
             result = getFeaturePairsBySequentialRANSAC(match_pair, X, Y, initial_indices);
             assert(result.empty() == false);
 #ifndef NDEBUG
-            writeImageOfFeaturePairs("sRANSAC", match_pair, result);
+            writeImageOfFeaturePairs("sRANSAC", match_pair, result);    // 写入经过RANSAC方法后的匹配点对
 #endif
         }
     }
     return feature_pairs;
 }
 
+// 存储图片的匹配点对位置到feature_matches中
 const vector<vector<vector<Point2> > > & MultiImages::getFeatureMatches() const {
     if(feature_matches.empty()) {
-        const vector<vector<vector<pair<int, int> > > > & feature_pairs = getFeaturePairs();
-        const vector<pair<int, int> > & images_match_graph_pair_list = parameter.getImagesMatchGraphPairList();
+        const vector<vector<vector<pair<int, int> > > > & feature_pairs = getFeaturePairs();    // 特征点对应关系
+        const vector<pair<int, int> > & images_match_graph_pair_list = parameter.getImagesMatchGraphPairList(); // 图片匹配关系图
         feature_matches.resize(images_data.size());
         for(int i = 0; i < images_data.size(); ++i) {
             feature_matches[i].resize(images_data.size());
@@ -799,35 +861,49 @@ const vector<vector<vector<Point2> > > & MultiImages::getFeatureMatches() const 
     return feature_matches;
 }
 
+// RANSAC方法
 vector<pair<int, int> > MultiImages::getFeaturePairsBySequentialRANSAC(const pair<int, int> & _match_pair,
                                                                        const vector<Point2> & _X,
                                                                        const vector<Point2> & _Y,
                                                                        const vector<pair<int, int> > & _initial_indices) const {
     const int HOMOGRAPHY_MODEL_MIN_POINTS = 4;
-    const int GLOBAL_MAX_ITERATION = log(1 - OPENCV_DEFAULT_CONFIDENCE) / log(1 - pow(GLOBAL_TRUE_PROBABILITY, HOMOGRAPHY_MODEL_MIN_POINTS));
+    const int GLOBAL_MAX_ITERATION = log(1 - OPENCV_DEFAULT_CONFIDENCE) / log(1 - pow(GLOBAL_TRUE_PROBABILITY, HOMOGRAPHY_MODEL_MIN_POINTS));   // 最大迭代次数 global_true_probability: 0.225
     
     vector<char> final_mask(_initial_indices.size(), 0);
-    findHomography(_X, _Y, CV_RANSAC, parameter.global_homography_max_inliers_dist, final_mask, GLOBAL_MAX_ITERATION);
+    Mat global_homo = findHomography(_X, _Y, CV_RANSAC, parameter.global_homography_max_inliers_dist, final_mask, GLOBAL_MAX_ITERATION);
+#ifndef NDEBUG
+    int global_initial_inliers_count = 0;
+    for(int i = 0; i < final_mask.size(); i++) {
+        if(final_mask[i]) { global_initial_inliers_count++; }
+    }
+    cout << "global initial inliers count: " << global_initial_inliers_count << endl;
+#endif
     
+#ifndef NTMP
+    // global_homo : global homograph, src -- dst : initial matching points, global_mask_file : global inliers mask
+    ofstream outFile(parameter.temp_dir + images_data[_match_pair.first].file_name + "-" +
+                     images_data[_match_pair.second].file_name + "_ransac.txt");
+#endif
     vector<Point2> tmp_X = _X, tmp_Y = _Y;
     
-    vector<int> mask_indices(_initial_indices.size(), 0);
+    vector<int> mask_indices(_initial_indices.size(), 0);   // _initial_indices: 初始化的匹配对集，
     for(int i = 0; i < mask_indices.size(); ++i) {
         mask_indices[i] = i;
     }
-    
+    int i = 1;
+    // 用外点来估计，防止外点正好是内点的情况？
     while(tmp_X.size() >= HOMOGRAPHY_MODEL_MIN_POINTS &&
           parameter.local_homogrpahy_max_inliers_dist < parameter.global_homography_max_inliers_dist) {
-        const int LOCAL_MAX_ITERATION = log(1 - OPENCV_DEFAULT_CONFIDENCE) / log(1 - pow(LOCAL_TRUE_PROBABILITY, HOMOGRAPHY_MODEL_MIN_POINTS));
+        const int LOCAL_MAX_ITERATION = log(1 - OPENCV_DEFAULT_CONFIDENCE) / log(1 - pow(LOCAL_TRUE_PROBABILITY, HOMOGRAPHY_MODEL_MIN_POINTS)); // local_true_probability: 0.2
         vector<Point2> next_X, next_Y;
         vector<char> mask(tmp_X.size(), 0);
-        findHomography(tmp_X, tmp_Y, CV_RANSAC, parameter.local_homogrpahy_max_inliers_dist, mask, LOCAL_MAX_ITERATION);
+        Mat local_homo = findHomography(tmp_X, tmp_Y, CV_RANSAC, parameter.local_homogrpahy_max_inliers_dist, mask, LOCAL_MAX_ITERATION);
 
         int inliers_count = 0;
         for(int i = 0; i < mask.size(); ++i) {
             if(mask[i]) { ++inliers_count; }
         }
-        if(inliers_count < parameter.local_homography_min_features_count) {
+        if(inliers_count < parameter.local_homography_min_features_count) { // 40
             break;
         }
         for(int i = 0, shift = -1; i < mask.size(); ++i) {
@@ -840,10 +916,18 @@ vector<pair<int, int> > MultiImages::getFeaturePairsBySequentialRANSAC(const pai
             }
         }
 #ifndef NDEBUG
-        cout << "Local true Probabiltiy = " << next_X.size() / (float)tmp_X.size() << endl;
+        cout << "inliers: " << inliers_count << endl;
+        float local_true = next_X.size() / (float)tmp_X.size();
+        cout << "Local true Probabiltiy = " << local_true << endl;
+#endif
+        
+#ifndef NTMP
+        outFile << "inliers: " << inliers_count << endl;
+        outFile << "Local true Probabiltiy = " << local_true << endl;
 #endif
         tmp_X = next_X;
         tmp_Y = next_Y;
+        i++;
     }
     vector<pair<int, int> > result;
     for(int i = 0; i < final_mask.size(); ++i) {
@@ -852,7 +936,14 @@ vector<pair<int, int> > MultiImages::getFeaturePairsBySequentialRANSAC(const pai
         }
     }
 #ifndef NDEBUG
-    cout << "Global true Probabiltiy = " << result.size() / (float)_initial_indices.size() << endl;
+    float global_true = result.size() / (float)_initial_indices.size();
+    cout << "global final inliers count: " << result.size() << endl;
+    cout << "Global true Probabiltiy = " << global_true << endl;
+#endif
+    
+#ifndef NTMP
+    outFile << "global final inliers count: " << result.size() << endl;
+    outFile << "Global true Probabiltiy = " << global_true << endl;
 #endif
     return result;
 }
@@ -864,13 +955,14 @@ bool compareFeaturePair(const FeatureDistance & fd_1, const FeatureDistance & fd
     (fd_1.feature_index[0]  < fd_2.feature_index[0]) ;
 }
 
+// 写入初始匹配点对的图片到内存中，并且返回初始特征点对
 vector<pair<int, int> > MultiImages::getInitialFeaturePairs(const pair<int, int> & _match_pair) const {
     const int nearest_size = 2, pair_count = 1;
     const bool ratio_test = true, intersect = true;
     
     assert(nearest_size > 0);
     
-    const int feature_size_1 = (int)images_data[_match_pair.first ].getFeaturePoints().size();
+    const int feature_size_1 = (int)images_data[_match_pair.first ].getFeaturePoints().size(); // 计算特征点和特征点描述子
     const int feature_size_2 = (int)images_data[_match_pair.second].getFeaturePoints().size();
     const int PAIR_COUNT = 2;
     const int feature_size[PAIR_COUNT] = { feature_size_1, feature_size_2 };
@@ -954,6 +1046,7 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
     return textureMapping(_vertices, _target_size, _blend_method, warp_images);
 }
 
+// 重叠区域融合方式
 Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
                                 const Size2 & _target_size,
                                 const BLENDING_METHODS & _blend_method,
@@ -961,16 +1054,16 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
     
     vector<Mat> weight_mask, new_weight_mask;
     vector<Point2> origins;
-    vector<Rect_<FLOAT_TYPE> > rects = getVerticesRects<FLOAT_TYPE>(_vertices);
+    vector<Rect_<FLOAT_TYPE> > rects = getVerticesRects<FLOAT_TYPE>(_vertices);     // 获取图片网格变形后的顶点所在的矩形区域
     
     switch (_blend_method) {
         case BLEND_AVERAGE:
             break;
         case BLEND_LINEAR:
-            weight_mask = getMatsLinearBlendWeight(getImages());
+            weight_mask = getMatsLinearBlendWeight(getImages());    // 获取线性融合的权重
             break;
         default:
-            printError("F(textureMapping) BLENDING METHOD");;
+            printError("F(textureMapping) BLENDING METHOD");
     }
 #ifndef NDEBUG
     for(int i = 0; i < rects.size(); ++i) {
@@ -990,7 +1083,7 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
         const Point2 origin(rects[i].x, rects[i].y);
         const Point2 shift(0.5, 0.5);
         vector<Mat> affine_transforms;
-        affine_transforms.reserve(polygons_indices.size() * (images_data[i].mesh_2d->getTriangulationIndices().size()));
+        affine_transforms.reserve(polygons_indices.size() * (images_data[i].mesh_2d->getTriangulationIndices().size()));    // 三角形的个数
         Mat polygon_index_mask(rects[i].height + shift.y, rects[i].width + shift.x, CV_32SC1, Scalar::all(NO_GRID));
         int label = 0;
         for(int j = 0; j < polygons_indices.size(); ++j) {
@@ -1001,7 +1094,7 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
                     (_vertices[i][polygons_indices[j].indices[index.indices[1]]] - origin) * SCALE,
                     (_vertices[i][polygons_indices[j].indices[index.indices[2]]] - origin) * SCALE,
                 };
-                fillConvexPoly(polygon_index_mask, contour, TRIANGLE_COUNT, label, LINE_AA, PRECISION);
+                fillConvexPoly(polygon_index_mask, contour, TRIANGLE_COUNT, label, LINE_AA, PRECISION);     // 画出凸包
                 Point2f src[] = {
                     _vertices[i][polygons_indices[j].indices[index.indices[0]]] - origin,
                     _vertices[i][polygons_indices[j].indices[index.indices[1]]] - origin,
@@ -1078,11 +1171,13 @@ void MultiImages::writeResultWithMesh(const Mat & _result,
     imwrite(parameter.debug_dir + parameter.file_name + _postfix + ".png", result(rect));
 }
 
+// 生成带有特征点对的图片对
 void MultiImages::writeImageOfFeaturePairs(const string & _name,
                                            const pair<int, int> & _match_pair,
                                            const vector<pair<int, int> > & _pairs) const {
     cout << images_data[_match_pair.first ].file_name << "-" <<
             images_data[_match_pair.second].file_name << " " << _name << " feature pairs = " << _pairs.size() << endl;
+
     
     const vector<Point2> & m1_fpts = images_data[_match_pair.first ].getFeaturePoints();
     const vector<Point2> & m2_fpts = images_data[_match_pair.second].getFeaturePoints();

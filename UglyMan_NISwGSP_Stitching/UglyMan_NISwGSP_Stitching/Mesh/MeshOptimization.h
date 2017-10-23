@@ -23,6 +23,8 @@ protected:
     void setWeightToGlobalSimilarityTerm(const double _weight_beta,
                                          const double _weight_gamma,
                                          const enum GLOBAL_ROTATION_METHODS _global_rotation_method);
+    // ***直线结构保护项权重
+    void setWeightToLinePreserveTerm(const double _weight);
     
     const MultiImages & getMultiImages() const;
     
@@ -30,6 +32,8 @@ protected:
     double getLocalSimilarityTermWeight() const;
     double getGlobalSimilarityTermWeightBeta() const;
     double getGlobalSimilarityTermWeightGamma() const;
+    // ***直线结构优化项权重
+    double getLinePreserveTermWeight() const;
     enum GLOBAL_ROTATION_METHODS getGlobalRotationMethod() const;
     
     void reserveData(vector<Triplet<double> > & _triplets,
@@ -39,6 +43,9 @@ protected:
     void prepareAlignmentTerm(vector<Triplet<double> > & _triplets) const;
     void prepareSimilarityTerm(vector<Triplet<double> > & _triplets,
                                vector<pair<int, double> > & _b_vector) const;
+    // ***直线结构优化项
+    void prepareLinePreserveTerm(vector<Triplet<double> > & _triplets,
+                                 vector<pair<int, double> > & _b_vector) const;
     
     vector<vector<Point2> > getImageVerticesBySolving(vector<Triplet<double> > & _triplets,
                                                       const vector<pair<int, double> > & _b_vector) const;
@@ -46,6 +53,8 @@ protected:
 private:
     
     int getAlignmentTermEquationsCount() const;
+    // ***直线结构优化项优化数目
+    int getLinePreserveTermEquationsCount() const;
 
     int getVerticesCount() const;
     int getEdgesCount() const;
@@ -56,10 +65,14 @@ private:
     double alignment_weight;
     double local_similarity_weight;
     double global_similarity_weight_beta, global_similarity_weight_gamma;
+    // ***直线结构优化项权重
+    double line_preserve_weight;
     
     pair<int, int> alignment_equation; /* begin, count */
     pair<int, int> local_similarity_equation;
     pair<int, int> global_similarity_equation;
+    // ***直线结构优化项起始与终点
+    pair<int, int> line_preserve_equation;
     enum GLOBAL_ROTATION_METHODS global_rotation_method;
 };
 
