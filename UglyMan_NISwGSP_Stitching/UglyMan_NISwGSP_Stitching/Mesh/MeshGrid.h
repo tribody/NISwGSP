@@ -26,11 +26,15 @@ public:
     const vector<int> & getBoundaryVertexIndices() const;
     const vector<int> & getBoundaryEdgeIndices() const;
     
+    Point2 getPointFromInterpolateVertex(const InterpolateVertex & _iv, const vector<Point2> & _vertices) const;
+    
     InterpolateVertex getInterpolateVertex(const Point_<float> & _p) const;
     InterpolateVertex getInterpolateVertex(const Point_<double> & _p) const;
     
     template <typename T>
     InterpolateVertex getInterpolateVertexTemplate(const Point_<T> & _p) const;
+    
+
 private:
     
 };

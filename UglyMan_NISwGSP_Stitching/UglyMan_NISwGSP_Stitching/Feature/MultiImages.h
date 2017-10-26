@@ -82,6 +82,7 @@ public:
     const vector<vector<InterpolateVertex> > & getInterpolateVerticesOfMatchingPoints() const;
     
     //***选中直线的网格插值
+    // get a point from a interpolatevertex
     const vector<vector<LineSegmentInterpolateVertex> > & getInterpolateVerticesOfSelectedLines() const;
     
     const vector<int> & getImagesVerticesStartIndex() const;
@@ -104,6 +105,10 @@ public:
                        const Size2 & _target_size,
                        const BLENDING_METHODS & _blend_method,
                        vector<Mat> & _warp_images) const;
+    
+    void writeResultWithLines(const Mat & _result,
+                              const vector<vector<Point2> > & _vertices,
+                              const string & _postfix) const;
     
     void writeResultWithMesh(const Mat & _result,
                              const vector<vector<Point2> > & _vertices,

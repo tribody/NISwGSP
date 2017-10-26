@@ -108,6 +108,8 @@ public:
     virtual const vector<int> & getBoundaryVertexIndices() const = 0; /* clockwise order */
     virtual const vector<int> & getBoundaryEdgeIndices() const = 0;
     
+    virtual Point2 getPointFromInterpolateVertex(const InterpolateVertex & _iv, const vector<Point2> & _vertices) const = 0;
+    
     virtual InterpolateVertex getInterpolateVertex(const Point_<float> & _p) const = 0;
     virtual InterpolateVertex getInterpolateVertex(const Point_<double> & _p) const = 0;
     

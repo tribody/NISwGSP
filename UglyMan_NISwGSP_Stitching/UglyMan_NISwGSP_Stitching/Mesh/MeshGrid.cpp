@@ -150,6 +150,7 @@ const vector<Indices> & MeshGrid::getVertexStructures() const {
     }
     return vertex_structures;
 }
+
 const vector<Indices> & MeshGrid::getEdgeStructures() const {
     if(edge_structures.empty()) {
         const vector<Point2i>         nexts = { Point2i(1,  0), Point2i( 0, 1) };
@@ -166,7 +167,7 @@ const vector<Indices> & MeshGrid::getEdgeStructures() const {
                         for(int j = 0; j < grid_neighbor.size(); ++j) {
                             Point2i p3 = p1 + grid_neighbor[n] * j;
                             if(p3.x >= 0 && p3.y >= 0 && p3.x < nw && p3.y < nh) {
-                                edge_structures[index].indices.emplace_back(p3.x + p3.y * nw);
+                                edge_structures[index].indices.emplace_back(p3.x + p3.y * nw);  // 表示按列优先排列的情况下的第p3.x + p3.y * nw个顶点
                             }
                         }
                         ++index;
@@ -233,6 +234,18 @@ const vector<int> & MeshGrid::getBoundaryEdgeIndices() const {
     }
     return boundary_edge_indices;
 }
+
+Point2 MeshGrid::getPointFromInterpolateVertex(const InterpolateVertex & _iv, const vector<Point2> & _vertices) const {
+    const vector<Indices> & polygons_indices = getPolygonsIndices();
+    Point2 p(0, 0);
+    
+    for (int i = 0; i < GRID_VERTEX_SIZE; i++) {
+        p += _iv.weights[i] * _vertices[polygons_indices[_iv.polygon].indices[i]];
+    }
+    
+    return p;
+}
+
 
 // 获取一个点的在某个（grid_index）网格中的插值权重（weights，按顺时针方向）
 template <typename T>

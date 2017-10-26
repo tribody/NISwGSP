@@ -51,6 +51,21 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
 
     original_vertices = getImageVerticesBySolving(triplets, b_vector);  // 解稀疏矩阵，求最优点集
     
+#ifndef NDEBUG
+    // 输出优化后的顶点集
+    ofstream outFile(multi_images.parameter.temp_dir + multi_images.parameter.file_name + "-computedVertices.txt");
+    for (int i = 0; i < original_vertices.size(); i++) {
+        outFile << "第" << i << "张图片计算顶点：" << endl;
+        for (int j = 0; j < multi_images.images_data[i].mesh_2d->nh; j++) {
+            for (int k = 0; k < multi_images.images_data[i].mesh_2d->nw; k++) {
+                outFile << original_vertices[i][j*multi_images.images_data[i].mesh_2d->nw+k] << " ";
+            }
+            outFile << endl;
+        }
+    }
+    outFile.close();
+#endif
+    
     Size2 target_size = normalizeVertices(original_vertices);   // 归一化点集
     
     Mat result = multi_images.textureMapping(original_vertices, target_size, _blend_method);
@@ -63,6 +78,12 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
                                      GLOBAL_ROTATION_METHODS_NAME[getGlobalRotationMethod()] +
                                      BLENDING_METHODS_NAME[_blend_method] +
                                      "[Border]", true);
+    if (getLinePreserveTermWeight()) {
+        multi_images.writeResultWithLines(result, original_vertices, "-[NISwGSP]" +
+                                          GLOBAL_ROTATION_METHODS_NAME[getGlobalRotationMethod()] +
+                                          BLENDING_METHODS_NAME[_blend_method] +
+                                          "[LINES]");
+    }
 #endif
     return result;
 }

@@ -352,9 +352,11 @@ const vector<vector<LineSegmentInterpolateVertex> > & MultiImages::getInterpolat
             for(int j = 0; j < selected_lines.size(); j++) {
                 vector<InterpolateVertex> ilv;
                 vector<int> weights;
+                // ilv容量为线段分割点的数量
                 for(int k = 0; k < selected_lines[j].points.size(); k++) {
                     ilv.emplace_back(images_data[i].mesh_2d->getInterpolateVertex(selected_lines[j].points[k]));
                 }
+                // weights容量为子线段数量（少2）
                 for(int k = 1; k < selected_lines[j].points.size()-1; k++) {
                     weights.emplace_back(selected_lines[j].step * k / selected_lines[j].length);
                 }
@@ -744,11 +746,13 @@ public:
         return dis > rhs.dis;
     }
 };
+
+// 采用dijtstra算法搜索所有vertices到重叠区域的最小距离（以重叠区域vertices为起点，向临接点搜索）
 const vector<vector<double> > & MultiImages::getImagesGridSpaceMatchingPointsWeight(const double _global_weight_gamma) const {
     if(_global_weight_gamma && images_polygon_space_matching_pts_weight.empty()) {
         images_polygon_space_matching_pts_weight.resize(images_data.size());
         const vector<vector<bool > > & images_features_mask = getImagesFeaturesMaskByMatchingPoints();      // 重叠区域网格点mask
-        const vector<vector<InterpolateVertex> > & mesh_interpolate_vertex_of_matching_pts = getInterpolateVerticesOfMatchingPoints();  // 网格点和匹配图投影到本土的点的网格内插点集
+        const vector<vector<InterpolateVertex> > & mesh_interpolate_vertex_of_matching_pts = getInterpolateVerticesOfMatchingPoints();  // 网格点和匹配图投影到本图的点的网格内插点集
         for(int i = 0; i < images_polygon_space_matching_pts_weight.size(); ++i) {
             const int polygons_count = (int)images_data[i].mesh_2d->getPolygonsIndices().size();    // 网格数量
             vector<bool> polygons_has_matching_pts(polygons_count, false);                          // 网格是否在重叠区域，即网格是否含有matching points
@@ -760,7 +764,7 @@ const vector<vector<double> > & MultiImages::getImagesGridSpaceMatchingPointsWei
             images_polygon_space_matching_pts_weight[i].reserve(polygons_count);    // 所有网格的权重
             priority_queue<dijkstraNode> que;       // 存储有特征点的网格的索引
             
-            // 初始化，在重叠区域（或者说有matching points）的网格，权重初始化为0， 其余网格权重初始化为max
+            // 初始化，在重叠区域（或者说有matching points）的网格，权重初始化为0， 其余网格权重初始化为max，先将重叠区域的所有顶点压入优先队列中（离出发点距离小的排在队头）
             for(int j = 0; j < polygons_has_matching_pts.size(); ++j) {
                 if(polygons_has_matching_pts[j]) {
                     polygons_has_matching_pts[j] = false;
@@ -770,7 +774,7 @@ const vector<vector<double> > & MultiImages::getImagesGridSpaceMatchingPointsWei
                     images_polygon_space_matching_pts_weight[i].emplace_back(MAXFLOAT);
                 }
             }
-            const vector<Indices> & polygons_neighbors = images_data[i].mesh_2d->getPolygonsNeighbors();    // 所有网格相邻网格的索引集
+            const vector<Indices> & polygons_neighbors = images_data[i].mesh_2d->getPolygonsNeighbors();    // 所有网格顶点相邻顶点的索引集
             const vector<Point2> & polygons_center = images_data[i].mesh_2d->getPolygonsCenter();           // 所有网格中心点位置
             while(que.empty() == false) {
                 const dijkstraNode now = que.top();
@@ -1138,6 +1142,28 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
     }
     
     return Blending(_warp_images, origins, _target_size, new_weight_mask, _blend_method == BLEND_AVERAGE);
+}
+
+// TODO : write results with lines
+void MultiImages::writeResultWithLines(const Mat & _result,
+                                       const vector<vector<Point2> > & _vertices,
+                                       const string & _postfix) const {
+    const Mat result(_result.size(), CV_8UC4);
+    _result.copyTo(result);
+    const vector<vector<LineSegmentInterpolateVertex>> & interpolateVerticesOfSelectedLines = getInterpolateVerticesOfSelectedLines();
+    for (int i = 0; i < images_data.size(); i++) {
+        const Scalar & color = getBlueToRedScalar((2. * i / (images_data.size() - 1)) - 1) * 255;
+        for (int j = 0; j < interpolateVerticesOfSelectedLines[i].size(); j++) {
+            for (int k = 0; k < interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex.size()-1; k++) {
+                line(result,
+                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex[k], _vertices[i]),
+                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex[k+1], _vertices[i]),
+                     color, 2, LINE_8);
+            }
+        }
+    }
+    
+    imwrite(parameter.debug_dir + parameter.file_name + _postfix + ".png", result);
 }
 
 void MultiImages::writeResultWithMesh(const Mat & _result,

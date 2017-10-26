@@ -27,19 +27,19 @@ int main(int argc, const char * argv[]) {
         /* 2D */
         NISwGSP_Stitching niswgsp(multi_images);    // 初始化优化类meshoptimaztion
         niswgsp.setWeightToAlignmentTerm(1);
-        niswgsp.setWeightToLocalSimilarityTerm(0.75);
+        niswgsp.setWeightToLocalSimilarityTerm(0.56);
         niswgsp.setWeightToGlobalSimilarityTerm(6, 20, GLOBAL_ROTATION_2D_METHOD);
-        niswgsp.setWeightToLinePreserveTerm(0);    // 赋予直线保护项相应的权重
+        niswgsp.setWeightToLinePreserveTerm(0.05);    // 赋予直线保护项相应的权重
         niswgsp.writeImage(niswgsp.solve(BLEND_AVERAGE), BLENDING_METHODS_NAME[BLEND_AVERAGE]);
         niswgsp.writeImage(niswgsp.solve(BLEND_LINEAR),  BLENDING_METHODS_NAME[BLEND_LINEAR]);
-        /* 3D */
-        niswgsp.setWeightToAlignmentTerm(1);
-        niswgsp.setWeightToLocalSimilarityTerm(0.75);
-        niswgsp.setWeightToGlobalSimilarityTerm(6, 20, GLOBAL_ROTATION_3D_METHOD);
-        niswgsp.setWeightToLinePreserveTerm(0);
-        niswgsp.writeImage(niswgsp.solve(BLEND_AVERAGE), BLENDING_METHODS_NAME[BLEND_AVERAGE]);
-        niswgsp.writeImage(niswgsp.solve(BLEND_LINEAR),  BLENDING_METHODS_NAME[BLEND_LINEAR]);
-        timer.end("[NISwGSP] " + multi_images.parameter.file_name);
+//        /* 3D */
+//        niswgsp.setWeightToAlignmentTerm(1);
+//        niswgsp.setWeightToLocalSimilarityTerm(0.75);
+//        niswgsp.setWeightToGlobalSimilarityTerm(6, 20, GLOBAL_ROTATION_3D_METHOD);
+//        niswgsp.setWeightToLinePreserveTerm(0);
+//        niswgsp.writeImage(niswgsp.solve(BLEND_AVERAGE), BLENDING_METHODS_NAME[BLEND_AVERAGE]);
+//        niswgsp.writeImage(niswgsp.solve(BLEND_LINEAR),  BLENDING_METHODS_NAME[BLEND_LINEAR]);
+//        timer.end("[NISwGSP] " + multi_images.parameter.file_name);
     }
     return 0;
 }

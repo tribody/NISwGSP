@@ -170,7 +170,7 @@ void MeshOptimization::prepareSimilarityTerm(vector<Triplet<double> > & _triplet
             const vector<Edge> & edges = multi_images->images_data[i].mesh_2d->getEdges();
             const vector<Point2> & vertices = multi_images->images_data[i].mesh_2d->getVertices();
             const vector<Indices> & v_neighbors = multi_images->images_data[i].mesh_2d->getVertexStructures();  // 存储所有顶点的相邻点的索引
-            const vector<Indices> & e_neighbors = multi_images->images_data[i].mesh_2d->getEdgeStructures();    // 存储所有的边的邻接网格的索引
+            const vector<Indices> & e_neighbors = multi_images->images_data[i].mesh_2d->getEdgeStructures();    // 存储所有的边的邻接网格（最多两个共用一条边）的索引
             
             const double similarity[DIMENSION_2D] = {
                 images_similarity_elements[i].scale * cos(images_similarity_elements[i].theta),
@@ -207,7 +207,7 @@ void MeshOptimization::prepareSimilarityTerm(vector<Triplet<double> > & _triplet
                 E_Main.at<double>(1, 0) =  e_main.y;
                 E_Main.at<double>(1, 1) = -e_main.x;
                 
-                Mat G_W = (Et * E).inv(DECOMP_SVD) * Et;    // 2 * 2 旋转矩阵 (Gk^t*Gk)^-1*Gk^t
+                Mat G_W = (Et * E).inv(DECOMP_SVD) * Et;    // 2 * (point_ind_set.size() * 2) 旋转矩阵 (Gk^t*Gk)^-1*Gk^t
                 Mat L_W = - E_Main * G_W;
                 
                 double _global_similarity_weight = global_similarity_weight_beta;
@@ -274,7 +274,7 @@ void MeshOptimization::prepareLinePreserveTerm(vector<Triplet<double> > & _tripl
         const vector<vector<LineSegmentInterpolateVertex> > & mesh_interpolate_vertex_of_selected_lines = multi_images->getInterpolateVerticesOfSelectedLines();    // 获取直线的网格插值点集
         const vector<int> & images_vertices_start_index = multi_images->getImagesVerticesStartIndex();
         int eq_count = 0;
-        for(int i = 0; i < multi_images->images_data.size(); i++) {
+        for(int i = 0; i < multi_images->images_data.size(); i++) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
             const vector<LineSegments> & selected_lines = multi_images->images_data[i].getSelectedLines();
             const vector<Indices> & polygons_indices = multi_images->images_data[i].mesh_2d->getPolygonsIndices();
             for(int j = 0; j < selected_lines.size(); j++) {

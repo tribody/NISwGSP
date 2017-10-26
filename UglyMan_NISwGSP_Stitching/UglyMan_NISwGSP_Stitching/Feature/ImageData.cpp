@@ -225,6 +225,7 @@ const vector<LineSegments> & ImageData::getSelectedLines() const {
                 outFile << userdata.lines[i] << endl;
             }
             lines = userdata.lines;
+            outFile.close();
         }
         
         for(int i = 0; i < lines.size(); i++) {
