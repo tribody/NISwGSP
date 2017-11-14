@@ -69,14 +69,14 @@ enum GLOBAL_ROTATION_METHODS MeshOptimization::getGlobalRotationMethod() const {
     return global_rotation_method;
 }
 
-void MeshOptimization::reserveData(vector<Triplet<double> > & _triplets,
+const pair<int, int> MeshOptimization::reserveData(vector<Triplet<double> > & _triplets,
                                    vector<pair<int, double> > & _b_vector,
                                    const int _start_index) {
     int equation = _start_index;
     const bool alignment_term = alignment_weight;   // 代表对齐项
     const bool local_similarity_term = local_similarity_weight; // 代表局部相似项
     const bool global_similarity_term = (global_similarity_weight_beta || global_similarity_weight_gamma);  // 代表全局相似项
-    const bool line_preserve_term = line_preserve_weight;   // 代表直线结构保持项
+    
     int edge_count = (local_similarity_term || global_similarity_term) ? getEdgesCount() : 0;
     int similarity_equation_count = (edge_count) ? edge_count * DIMENSION_2D : 0;   // 代表局部相似优化项的个数
     int edge_neighbor_vertices_count = (similarity_equation_count) ? getEdgeNeighborVerticesCount() : 0;    // 代表全局相似优化项的个数
@@ -93,25 +93,35 @@ void MeshOptimization::reserveData(vector<Triplet<double> > & _triplets,
     global_similarity_equation.second = (global_similarity_term) ? similarity_equation_count : 0;   // 全局相似项总优化个数
     equation += global_similarity_equation.second;
     
-    // TODO：找到直线结构保护优化项所需要的总优化个数
-    line_preserve_equation.first = equation;
-    line_preserve_equation.second = (line_preserve_term) ? getLinePreserveTermEquationsCount() : 0; // 直线结构保持项总优化个数
-    
-    // 对齐项，一对匹配点有8个_triplets优化项，分别是原始点的四个网格顶点插值和对应点的四个网个顶点插值
+    // 对齐项，一对匹配点有8个_triplets优化项，分别是原始点的四个网格顶点插值和对应点的四个网格顶点插值
     // 局部相似项，
     // 全局相似项，
     _triplets.reserve(alignment_equation.second * 8 +
                       (local_similarity_term) * (edge_neighbor_vertices_count * 8 + edge_count * 4) +
                       (global_similarity_term) * (edge_neighbor_vertices_count * 8) +
-                      (line_preserve_term) * (line_preserve_equation.second * 12) +
                       _start_index);
     // 对应的所有边相邻点的优化目标项
-    _b_vector.reserve((global_similarity_term) * edge_neighbor_vertices_count * 4 +
-                      _start_index);
+    int origin_sparse_b_vector_size = (global_similarity_term) * edge_neighbor_vertices_count * 4 + _start_index;
+    _b_vector.reserve(origin_sparse_b_vector_size);
     
+    return make_pair(equation, origin_sparse_b_vector_size);
     // TODO：分配直线结构保护优化项所需的_triplets空间大小
 }
 
+// TODO : 准备优化项的个数（带直线优化的直线保护项）
+void MeshOptimization::reserveExtraData(vector<Triplet<double> > & _triplets,
+                                        vector<pair<int, double> > & _b_vector,
+                                        const pair<int, int> & _origin_sparse_size) {
+    
+    const bool line_preserve_term = line_preserve_weight;   // 代表直线结构保持项
+    
+    // TODO：找到直线结构保护优化项所需要的总优化个数
+    line_preserve_equation.first = _origin_sparse_size.first;
+    line_preserve_equation.second = (line_preserve_term) ? getLinePreserveTermEquationsCount() : 0; // 直线结构保持项总优化个数
+    
+    _triplets.reserve(_origin_sparse_size.first + line_preserve_term * (line_preserve_equation.second * 4));
+    _b_vector.reserve(_origin_sparse_size.second + line_preserve_term * (line_preserve_equation.second + 2));
+}
 // 准备对齐项三元数（_triplets）
 void MeshOptimization::prepareAlignmentTerm(vector<Triplet<double> > & _triplets) const {
     if(alignment_equation.second) {
@@ -267,33 +277,61 @@ void MeshOptimization::prepareSimilarityTerm(vector<Triplet<double> > & _triplet
 
 // 准备直线结构保护优化项
 void MeshOptimization::prepareLinePreserveTerm(vector<Triplet<double> > & _triplets,
-                                               vector<pair<int, double> > & _b_vector) const {
-    // TODO：准备直线结构保护优化项所需要的_triplets和_b_vector
+                                               vector<pair<int, double> > & _b_vector,
+                                               vector<vector<Point2> > & _new_vertices) const {
+    // TODO：计算第一阶段优化后的直线端点的位置，固定住这些点的位置，作二次优化
     if(line_preserve_equation.second) {
         const int equation = line_preserve_equation.first;
-        const vector<vector<LineSegmentInterpolateVertex> > & mesh_interpolate_vertex_of_selected_lines = multi_images->getInterpolateVerticesOfSelectedLines();    // 获取直线的网格插值点集
+        const vector<vector<vector<InterpolateVertex> > > & mesh_interpolate_vertex_of_selected_lines = multi_images->getInterpolateVerticesOfSelectedLines();    // 获取直线的网格插值点集
         const vector<int> & images_vertices_start_index = multi_images->getImagesVerticesStartIndex();
         int eq_count = 0;
         for(int i = 0; i < multi_images->images_data.size(); i++) {                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
-            const vector<LineSegments> & selected_lines = multi_images->images_data[i].getSelectedLines();
             const vector<Indices> & polygons_indices = multi_images->images_data[i].mesh_2d->getPolygonsIndices();
-            for(int j = 0; j < selected_lines.size(); j++) {
-                for(int p = 1; p < selected_lines[j].points.size()-1; p++) {
-                    for(int dim = 0; dim < DIMENSION_2D; ++dim) {   // 2 对横纵坐标都有计算？
-                        // 这一部分是原始顶点集
-                        for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) { // getPolygonVerticesCount = GRID_VERTEX_SIZE = 4
-                            _triplets.emplace_back(equation + eq_count + dim,
-                                                   images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[p].polygon].indices[k]),
-                                                   line_preserve_weight * mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[p].weights[k]);
-                            _triplets.emplace_back(equation + eq_count + dim,
-                                                    images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[selected_lines[j].points.size()-1].polygon].indices[k]),
-                                                    -mesh_interpolate_vertex_of_selected_lines[i][j].weights[p-1] * line_preserve_weight * mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[p].weights[k]);
-                            _triplets.emplace_back(equation + eq_count + dim,
-                                                   images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[0].polygon].indices[k]),
-                                                   (mesh_interpolate_vertex_of_selected_lines[i][j].weights[p-1] - 1) * line_preserve_weight * mesh_interpolate_vertex_of_selected_lines[i][j].line_points_interpolateVertex[p].weights[k]);
-                        }
+            for(int j = 0; j < mesh_interpolate_vertex_of_selected_lines[i].size(); j++) {
+                const InterpolateVertex & iv_p0 = mesh_interpolate_vertex_of_selected_lines[i][j][0];
+                const InterpolateVertex & iv_p1 = mesh_interpolate_vertex_of_selected_lines[i][j][mesh_interpolate_vertex_of_selected_lines[i][j].size()-1];
+                Point2 p0 = multi_images->images_data[i].mesh_2d->getPointFromInterpolateVertex(iv_p0, _new_vertices[i]);
+                Point2 p1 = multi_images->images_data[i].mesh_2d->getPointFromInterpolateVertex(iv_p1, _new_vertices[i]);
+                double y1_y0 = p1.y - p0.y;
+                double x1_x0 = p1.x - p0.x;
+                double b = p0.x * p1.y - p1.x * p0.y;
+                double line_length_inv = 1 / sqrt(p0.x * p0.x + p1.y * p1.y);
+                // handle for p0
+                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
+                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
+                        _triplets.emplace_back(equation + eq_count + dim,
+                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p0.polygon].indices[k]),
+                                               STRONG_CONSTRAINT * iv_p0.weights[k]);
                     }
-                    eq_count += DIMENSION_2D;
+                }
+                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p0.x);
+                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p0.y);
+                eq_count += 2;
+
+                // handle for p1
+                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
+                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
+                        _triplets.emplace_back(equation + eq_count + dim,
+                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p1.polygon].indices[k]),
+                                               STRONG_CONSTRAINT * iv_p1.weights[k]);
+                    }
+                }
+                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p1.x);
+                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p1.y);
+                eq_count += 2;
+                
+                for(int p = 1; p < mesh_interpolate_vertex_of_selected_lines[i][j].size()-1; p++) {
+                    // 这一部分是原始顶点集
+                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) { // PolygonVerticesCount = GRID_VERTEX_SIZE = 4
+                        _triplets.emplace_back(equation + eq_count,
+                                                images_vertices_start_index[i] + 0 + DIMENSION_2D * (polygons_indices[mesh_interpolate_vertex_of_selected_lines[i][j][p].polygon].indices[k]),
+                                                line_preserve_weight * line_length_inv * y1_y0 * mesh_interpolate_vertex_of_selected_lines[i][j][p].weights[k]);
+                        _triplets.emplace_back(equation + eq_count,
+                                                images_vertices_start_index[i] + 1 + DIMENSION_2D * (polygons_indices[mesh_interpolate_vertex_of_selected_lines[i][j][p].polygon].indices[k]),
+                                                -line_preserve_weight * line_length_inv * x1_x0 * mesh_interpolate_vertex_of_selected_lines[i][j][p].weights[k]);
+                    }
+                    _b_vector.emplace_back(equation + eq_count, line_length_inv * b);
+                    eq_count++;
                 }
             }
         }
@@ -301,7 +339,6 @@ void MeshOptimization::prepareLinePreserveTerm(vector<Triplet<double> > & _tripl
     }
 }
 
-//
 int MeshOptimization::getAlignmentTermEquationsCount() const {
     int result = 0;
     const vector<pair<int, int> > & images_match_graph_pair_list = multi_images->parameter.getImagesMatchGraphPairList();
@@ -315,15 +352,15 @@ int MeshOptimization::getAlignmentTermEquationsCount() const {
     return result * DIMENSION_2D;
 }
 
+// 获取直线优化项方程数目
 int MeshOptimization::getLinePreserveTermEquationsCount() const {
-    // 获取每张图片待优化项直线数目
     int result = 0;
     for(int i = 0; i < multi_images->images_data.size(); i++) {
         for(int j = 0; j < multi_images->images_data[i].getSelectedLines().size(); j++) {
-            result += multi_images->images_data[i].getSelectedLines()[j].points.size() - 2;
+            result += multi_images->images_data[i].getSelectedLines()[j].size() + 2;
         }
     }
-    return result * DIMENSION_2D;
+    return result;
 }
 
 // 获取所有网格顶点数目，并存储
@@ -360,10 +397,16 @@ int MeshOptimization::getEdgeNeighborVerticesCount() const {
     return result;
 }
 
-// 稀疏矩阵求解（最小二乘法）
+// 稀疏矩阵求解（共轭梯度下降法）分两阶段求解，第一阶段不考虑直线约束，第二阶段加上直线约束
 vector<vector<Point2> > MeshOptimization::getImageVerticesBySolving(vector<Triplet<double> > & _triplets,
-                                                                    const vector<pair<int, double> > & _b_vector) const {
-    const int equations = line_preserve_equation.first + line_preserve_equation.second;
+                                                                    const vector<pair<int, double> > & _b_vector,
+                                                                    const bool is_phase_one) const {
+    int equations;
+    if (is_phase_one) {
+        equations = global_similarity_equation.first + global_similarity_equation.second;
+    } else {
+        equations = line_preserve_equation.first + line_preserve_equation.second;
+    }
 
     LeastSquaresConjugateGradient<SparseMatrix<double> > lscg;
     SparseMatrix<double> A(equations, getVerticesCount());

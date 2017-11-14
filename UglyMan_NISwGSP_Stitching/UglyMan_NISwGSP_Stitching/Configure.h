@@ -80,7 +80,7 @@ const double LAMBDA_GAMMA = 10;
 
 /*** lines_preserve_term ***/
 const double LINES_THRESHOLD = 80.0;    /* used for automatic long lines selecting */
-const double LINES_INTERVAL = 10.0;     /* lines sampling interval */
+const double LINES_INTERVAL = 50.0;     /* lines sampling interval */
 
 /******************************/
 /******************************/

@@ -83,7 +83,7 @@ public:
     
     //***选中直线的网格插值
     // get a point from a interpolatevertex
-    const vector<vector<LineSegmentInterpolateVertex> > & getInterpolateVerticesOfSelectedLines() const;
+    const vector<vector<vector<InterpolateVertex> > > & getInterpolateVerticesOfSelectedLines() const;
     
     const vector<int> & getImagesVerticesStartIndex() const;
     const vector<SimilarityElements> & getImagesSimilarityElements(const enum GLOBAL_ROTATION_METHODS & _global_rotation_method) const;
@@ -153,7 +153,7 @@ private:
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_feature_pts;
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_matching_pts;
     //***直线结构优化项，需要保护的直线网格插值
-    mutable vector<vector<LineSegmentInterpolateVertex> > mesh_interpolate_vertex_of_selected_lines;
+    mutable vector<vector<vector<InterpolateVertex> > > mesh_interpolate_vertex_of_selected_lines;
     
     mutable vector<int> images_vertices_start_index;
     mutable vector<SimilarityElements> images_similarity_elements_2D;

@@ -36,16 +36,6 @@ public:
 private:
 };
 
-class LineSegments {
-public:
-    LineSegments(const vector<Point2> & _points,
-                 const double _length,
-                 const double _step);
-    vector<Point2> points;
-    double length, step;
-private:
-};
-
 // 这里非常巧妙的应用了typedef替代重复的声明过程
 typedef const bool (LINES_FILTER_FUNC)(const double _data, \
                                        const Statistics & _statistics);
@@ -69,7 +59,7 @@ public:
     const Mat & getGreyImage() const;
     const vector<LineData> & getLines() const;
     // 选择需要的直线原始点集
-    const vector<LineSegments> & getSelectedLines() const;
+    const vector<vector<Point2> > & getSelectedLines() const;
     const vector<Point2> & getFeaturePoints() const;
     const vector<FeatureDescriptor> & getFeatureDescriptors() const;
     
@@ -84,7 +74,7 @@ private:
     mutable Mat grey_img;
     mutable vector<LineData> img_lines;
     // 选中直线的点集
-    mutable vector<LineSegments> selected_lines;
+    mutable vector<vector<Point2> > selected_lines;
     mutable vector<Point2> feature_points;
     mutable vector<FeatureDescriptor> feature_descriptors;
 };

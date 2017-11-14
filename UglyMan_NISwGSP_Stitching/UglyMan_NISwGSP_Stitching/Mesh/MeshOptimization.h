@@ -36,19 +36,25 @@ protected:
     double getLinePreserveTermWeight() const;
     enum GLOBAL_ROTATION_METHODS getGlobalRotationMethod() const;
     
-    void reserveData(vector<Triplet<double> > & _triplets,
+    const pair<int, int> reserveData(vector<Triplet<double> > & _triplets,
                      vector<pair<int, double> > & _b_vector,
                      const int _start_index);
+    
+    void reserveExtraData(vector<Triplet<double> > & _triplets,
+                          vector<pair<int, double> > & _b_vector,
+                          const pair<int, int> & _origin_sparse_size);
     
     void prepareAlignmentTerm(vector<Triplet<double> > & _triplets) const;
     void prepareSimilarityTerm(vector<Triplet<double> > & _triplets,
                                vector<pair<int, double> > & _b_vector) const;
     // ***直线结构优化项
     void prepareLinePreserveTerm(vector<Triplet<double> > & _triplets,
-                                 vector<pair<int, double> > & _b_vector) const;
+                                 vector<pair<int, double> > & _b_vector,
+                                 vector<vector<Point2> > & _new_vertices) const;
     
     vector<vector<Point2> > getImageVerticesBySolving(vector<Triplet<double> > & _triplets,
-                                                      const vector<pair<int, double> > & _b_vector) const;
+                                                      const vector<pair<int, double> > & _b_vector,
+                                                      const bool is_phase_one) const;
     
 private:
     

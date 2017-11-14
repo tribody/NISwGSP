@@ -18,14 +18,6 @@ LineData::LineData(const Point2 & _a,
     length  = _length;
 }
 
-LineSegments::LineSegments(const vector<Point2> & _points,
-                           const double _length,
-                           const double _step) {
-    points = _points;
-    length = _length;
-    step = _step;
-}
-
 const bool LINES_FILTER_NONE(const double _data,
                              const Statistics & _statistics) {
     return true;
@@ -177,7 +169,7 @@ const vector<LineData> & ImageData::getLines() const {
 //}
 
 // 得到长直线结果集 TODO : 寻求自动化提取长直线结构的方式
-const vector<LineSegments> & ImageData::getSelectedLines() const {
+const vector<vector<Point2> > & ImageData::getSelectedLines() const {
     if(selected_lines.empty()) {
         // choose to load the stored lines or select by gui
         // if load the lines, don't need to store them again
@@ -241,7 +233,7 @@ const vector<LineSegments> & ImageData::getSelectedLines() const {
                 line_segments.emplace_back(x, y);
             }
             line_segments.emplace_back(lines[i][2], lines[i][3]);
-            selected_lines.emplace_back(line_segments, length, step);
+            selected_lines.emplace_back(line_segments);
         }
     }
     return selected_lines;

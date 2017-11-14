@@ -342,25 +342,20 @@ const vector<vector<InterpolateVertex> > & MultiImages::getInterpolateVerticesOf
 }
 
 //***得到图片选中直线的采样点网格插值集
-const vector<vector<LineSegmentInterpolateVertex> > & MultiImages::getInterpolateVerticesOfSelectedLines() const {
+const vector<vector<vector<InterpolateVertex> > > & MultiImages::getInterpolateVerticesOfSelectedLines() const {
     if(mesh_interpolate_vertex_of_selected_lines.empty()) {
         mesh_interpolate_vertex_of_selected_lines.resize(images_data.size());
         //TODO: 得到直线点的投影点，然后分别求出每张图片投影点的网格双线性插值
         for(int i = 0; i < images_data.size(); i++) {
-            const vector<LineSegments> & selected_lines = images_data[i].getSelectedLines();
+            const vector<vector<Point2> > & selected_lines = images_data[i].getSelectedLines();
             mesh_interpolate_vertex_of_selected_lines[i].reserve(selected_lines.size());
             for(int j = 0; j < selected_lines.size(); j++) {
                 vector<InterpolateVertex> ilv;
-                vector<int> weights;
                 // ilv容量为线段分割点的数量
-                for(int k = 0; k < selected_lines[j].points.size(); k++) {
-                    ilv.emplace_back(images_data[i].mesh_2d->getInterpolateVertex(selected_lines[j].points[k]));
+                for(int k = 0; k < selected_lines[j].size(); k++) {
+                    ilv.emplace_back(images_data[i].mesh_2d->getInterpolateVertex(selected_lines[j][k]));
                 }
-                // weights容量为子线段数量（少2）
-                for(int k = 1; k < selected_lines[j].points.size()-1; k++) {
-                    weights.emplace_back(selected_lines[j].step * k / selected_lines[j].length);
-                }
-                mesh_interpolate_vertex_of_selected_lines[i].emplace_back(ilv, weights);
+                mesh_interpolate_vertex_of_selected_lines[i].emplace_back(ilv);
             }
         }
     }
@@ -1150,14 +1145,14 @@ void MultiImages::writeResultWithLines(const Mat & _result,
                                        const string & _postfix) const {
     const Mat result(_result.size(), CV_8UC4);
     _result.copyTo(result);
-    const vector<vector<LineSegmentInterpolateVertex>> & interpolateVerticesOfSelectedLines = getInterpolateVerticesOfSelectedLines();
+    const vector<vector<vector<InterpolateVertex> > > & interpolateVerticesOfSelectedLines = getInterpolateVerticesOfSelectedLines();
     for (int i = 0; i < images_data.size(); i++) {
         const Scalar & color = getBlueToRedScalar((2. * i / (images_data.size() - 1)) - 1) * 255;
         for (int j = 0; j < interpolateVerticesOfSelectedLines[i].size(); j++) {
-            for (int k = 0; k < interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex.size()-1; k++) {
+            for (int k = 0; k < interpolateVerticesOfSelectedLines[i][j].size()-1; k++) {
                 line(result,
-                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex[k], _vertices[i]),
-                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j].line_points_interpolateVertex[k+1], _vertices[i]),
+                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j][k], _vertices[i]),
+                     images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j][k+1], _vertices[i]),
                      color, 2, LINE_8);
             }
         }

@@ -10,92 +10,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "UglyMan_NISwGSP_Stitching/Mesh/MeshOptimization.cpp"
-            timestampString = "527312188.622762"
+            timestampString = "532330747.303646"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "116"
-            endingLineNumber = "116"
-            landmarkName = "MeshOptimization::prepareAlignmentTerm(vector&lt;Triplet&lt;double&gt; &gt; &amp; _triplets)"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Feature/ImageData.cpp"
-            timestampString = "529858450.916542"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "195"
-            endingLineNumber = "195"
-            landmarkName = "ImageData::getSelectedLines()"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Feature/ImageData.cpp"
-            timestampString = "529858450.916542"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "203"
-            endingLineNumber = "203"
-            landmarkName = "ImageData::getSelectedLines()"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Feature/MultiImages.cpp"
-            timestampString = "530627142.397723"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1156"
-            endingLineNumber = "1156"
-            landmarkName = "MultiImages::writeResultWithLines(const Mat &amp; _result, const vector&lt;vector&lt;Point2&gt; &gt; &amp; _vertices, const string &amp; _postfix)"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Mesh/MeshGrid.cpp"
-            timestampString = "530628932.734973"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "178"
-            endingLineNumber = "178"
-            landmarkName = "MeshGrid::getEdgeStructures()"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "Yes"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Mesh/MeshOptimization.cpp"
-            timestampString = "530677025.859136"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "194"
-            endingLineNumber = "194"
-            landmarkName = "MeshOptimization::prepareSimilarityTerm(vector&lt;Triplet&lt;double&gt; &gt; &amp; _triplets, vector&lt;pair&lt;int, double&gt; &gt; &amp; _b_vector)"
+            startingLineNumber = "279"
+            endingLineNumber = "279"
+            landmarkName = "MeshOptimization::prepareLinePreserveTerm(vector&lt;Triplet&lt;double&gt; &gt; &amp; _triplets, vector&lt;pair&lt;int, double&gt; &gt; &amp; _b_vector, vector&lt;vector&lt;Point2&gt; &gt; &amp; _new_vertices)"
             landmarkType = "5">
          </BreakpointContent>
       </BreakpointProxy>
