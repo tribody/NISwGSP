@@ -296,29 +296,29 @@ void MeshOptimization::prepareLinePreserveTerm(vector<Triplet<double> > & _tripl
                 double x1_x0 = p1.x - p0.x;
                 double b = p0.x * p1.y - p1.x * p0.y;
                 double line_length_inv = 1 / sqrt(p0.x * p0.x + p1.y * p1.y);
-                // handle for p0
-                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
-                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
-                        _triplets.emplace_back(equation + eq_count + dim,
-                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p0.polygon].indices[k]),
-                                               STRONG_CONSTRAINT * iv_p0.weights[k]);
-                    }
-                }
-                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p0.x);
-                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p0.y);
-                eq_count += 2;
-
-                // handle for p1
-                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
-                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
-                        _triplets.emplace_back(equation + eq_count + dim,
-                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p1.polygon].indices[k]),
-                                               STRONG_CONSTRAINT * iv_p1.weights[k]);
-                    }
-                }
-                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p1.x);
-                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p1.y);
-                eq_count += 2;
+//                // handle for p0
+//                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
+//                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
+//                        _triplets.emplace_back(equation + eq_count + dim,
+//                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p0.polygon].indices[k]),
+//                                               STRONG_CONSTRAINT * iv_p0.weights[k]);
+//                    }
+//                }
+//                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p0.x);
+//                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p0.y);
+//                eq_count += 2;
+//
+//                // handle for p1
+//                for(int dim = 0; dim < DIMENSION_2D; ++dim) {
+//                    for(int k = 0; k < multi_images->images_data[i].mesh_2d->getPolygonVerticesCount(); k++) {
+//                        _triplets.emplace_back(equation + eq_count + dim,
+//                                               images_vertices_start_index[i] + dim + DIMENSION_2D * (polygons_indices[iv_p1.polygon].indices[k]),
+//                                               STRONG_CONSTRAINT * iv_p1.weights[k]);
+//                    }
+//                }
+//                _b_vector.emplace_back(equation + eq_count + 0, STRONG_CONSTRAINT * p1.x);
+//                _b_vector.emplace_back(equation + eq_count + 1, STRONG_CONSTRAINT * p1.y);
+//                eq_count += 2;
                 
                 for(int p = 1; p < mesh_interpolate_vertex_of_selected_lines[i][j].size()-1; p++) {
                     // 这一部分是原始顶点集
@@ -357,7 +357,7 @@ int MeshOptimization::getLinePreserveTermEquationsCount() const {
     int result = 0;
     for(int i = 0; i < multi_images->images_data.size(); i++) {
         for(int j = 0; j < multi_images->images_data[i].getSelectedLines().size(); j++) {
-            result += multi_images->images_data[i].getSelectedLines()[j].size() + 2;
+            result += multi_images->images_data[i].getSelectedLines()[j].size() - 2;
         }
     }
     return result;

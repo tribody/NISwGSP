@@ -87,7 +87,7 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
     // 第二阶段优化
     cout << "*************第二阶段优化**************" << endl;
     reserveExtraData(triplets, b_vector, origin_sparse_size);
-    
+
     prepareLinePreserveTerm(triplets, b_vector, new_vertices);    // 准备全局直线结构保护项
     
     vector<vector<Point2> > final_vertices;

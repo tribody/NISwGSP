@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "SPHP-building"
+            argument = "LAB-computer"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

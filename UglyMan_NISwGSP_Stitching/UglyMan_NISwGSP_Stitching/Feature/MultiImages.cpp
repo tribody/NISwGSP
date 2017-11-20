@@ -1147,13 +1147,18 @@ void MultiImages::writeResultWithLines(const Mat & _result,
     _result.copyTo(result);
     const vector<vector<vector<InterpolateVertex> > > & interpolateVerticesOfSelectedLines = getInterpolateVerticesOfSelectedLines();
     for (int i = 0; i < images_data.size(); i++) {
-        const Scalar & color = getBlueToRedScalar((2. * i / (images_data.size() - 1)) - 1) * 255;
+        const Scalar & line_color = getBlueToRedScalar((2. * i / (images_data.size() - 1)) - 1) * 255;
         for (int j = 0; j < interpolateVerticesOfSelectedLines[i].size(); j++) {
+            const Scalar & point_color = getBlueToRedScalar((2. * i / (images_data.size() - 1)) - 1, 1, -1) * 255;
+            for (int k = 0; k < interpolateVerticesOfSelectedLines[i][j].size(); k++) {
+                circle(result,
+                       images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j][k], _vertices[i]), 4, point_color);
+            }
             for (int k = 0; k < interpolateVerticesOfSelectedLines[i][j].size()-1; k++) {
                 line(result,
                      images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j][k], _vertices[i]),
                      images_data[i].mesh_2d->getPointFromInterpolateVertex(interpolateVerticesOfSelectedLines[i][j][k+1], _vertices[i]),
-                     color, 2, LINE_8);
+                     line_color, 2, LINE_8);
             }
         }
     }

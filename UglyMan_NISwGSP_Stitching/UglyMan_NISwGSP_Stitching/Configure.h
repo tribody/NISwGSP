@@ -79,7 +79,7 @@ const double TOLERANT_ANGLE = 1.5;
 const double LAMBDA_GAMMA = 10;
 
 /*** lines_preserve_term ***/
-const double LINES_THRESHOLD = 80.0;    /* used for automatic long lines selecting */
+const double LINES_THRESHOLD = 50.0;    /* used for automatic long lines selecting */
 const double LINES_INTERVAL = 50.0;     /* lines sampling interval */
 
 /******************************/
