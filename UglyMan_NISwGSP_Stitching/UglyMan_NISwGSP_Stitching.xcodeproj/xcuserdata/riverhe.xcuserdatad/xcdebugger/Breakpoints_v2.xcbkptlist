@@ -2,22 +2,4 @@
 <Bucket
    type = "1"
    version = "2.0">
-   <Breakpoints>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "UglyMan_NISwGSP_Stitching/Mesh/MeshOptimization.cpp"
-            timestampString = "532330747.303646"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "279"
-            endingLineNumber = "279"
-            landmarkName = "MeshOptimization::prepareLinePreserveTerm(vector&lt;Triplet&lt;double&gt; &gt; &amp; _triplets, vector&lt;pair&lt;int, double&gt; &gt; &amp; _b_vector, vector&lt;vector&lt;Point2&gt; &gt; &amp; _new_vertices)"
-            landmarkType = "5">
-         </BreakpointContent>
-      </BreakpointProxy>
-   </Breakpoints>
 </Bucket>

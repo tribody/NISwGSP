@@ -63,7 +63,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "LAB-computer"
+            argument = "NISwLP-07_triumphal_arch2"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -120,7 +120,7 @@ void MeshOptimization::reserveExtraData(vector<Triplet<double> > & _triplets,
     line_preserve_equation.second = (line_preserve_term) ? getLinePreserveTermEquationsCount() : 0; // 直线结构保持项总优化个数
     
     _triplets.reserve(_origin_sparse_size.first + line_preserve_term * (line_preserve_equation.second * 4));
-    _b_vector.reserve(_origin_sparse_size.second + line_preserve_term * (line_preserve_equation.second + 2));
+    _b_vector.reserve(_origin_sparse_size.second + line_preserve_term * (line_preserve_equation.second));
 }
 // 准备对齐项三元数（_triplets）
 void MeshOptimization::prepareAlignmentTerm(vector<Triplet<double> > & _triplets) const {
@@ -420,7 +420,13 @@ vector<vector<Point2> > MeshOptimization::getImageVerticesBySolving(vector<Tripl
     
 #ifndef NTMP
     const Parameter & parameter = multi_images->parameter;
-    ofstream outFile(parameter.temp_dir + parameter.file_name + "_optimization.txt");
+    ofstream outFile;
+    if (is_phase_one) {
+        outFile.open(parameter.temp_dir + parameter.file_name + "_optimization.txt");
+    } else {
+        outFile.open(parameter.temp_dir + parameter.file_name + "_optimization.txt", ios::app);
+    }
+    
     outFile << "A = [" << equations << ", " << getVerticesCount() << "]" << endl;
 #endif
     

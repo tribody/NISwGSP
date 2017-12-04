@@ -9,6 +9,9 @@
 #ifndef __UglyMan_Stitiching__Configure__
 #define __UglyMan_Stitiching__Configure__
 
+//#define NDEBUG
+//#define NTMP
+
 #include "ErrorController.h"
 #include "TimeCalculator.h"
 
@@ -79,8 +82,10 @@ const double TOLERANT_ANGLE = 1.5;
 const double LAMBDA_GAMMA = 10;
 
 /*** lines_preserve_term ***/
-const double LINES_THRESHOLD = 50.0;    /* used for automatic long lines selecting */
-const double LINES_INTERVAL = 50.0;     /* lines sampling interval */
+const double LINES_THRESHOLD = 60;    /* used for automatic long lines selecting */
+const double LINES_INTERVAL = 56.0;     /* lines sampling interval */
+const bool IS_AUTOMATIC = false;      /* true for automatic-select, false for user-guided */
+const bool IS_LOAD = false;           /* true for loading data, false for user-guided */
 
 /******************************/
 /******************************/

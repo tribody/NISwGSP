@@ -147,8 +147,8 @@ private:
     mutable vector<vector<vector<Mat> > >    apap_homographies;
     mutable vector<vector<vector<Point2> > > apap_matching_points;
     
-    // ***直线结构保护优化项，标记需要保护的直线
-    mutable vector<vector<vector<Point2 > > > selected_image_lines;    /* [m1][i], img1 i_th lines */
+//    // ***直线结构保护优化项，标记需要保护的直线
+//    mutable vector<vector<vector<Point2 > > > selected_image_lines;    /* [m1][i], img1 i_th lines */
     
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_feature_pts;
     mutable vector<vector<InterpolateVertex> > mesh_interpolate_vertex_of_matching_pts;

@@ -36,9 +36,11 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
     
     vector<Triplet<double> > triplets;      // triplets（三元数）代表优化项，存储优化项在矩阵中的行列坐标和值，即稀疏矩阵的各项
     vector<pair<int, double> > b_vector;    // b_vector（pair<int, double>)代表Ax=b右向量，存储行坐标和值即优化目标，
-    
+
+#ifndef NDEBUG
     // 第一阶段优化
     cout << "*************第一阶段优化**************" << endl;
+#endif
     const pair<int, int> & origin_sparse_size = reserveData(triplets, b_vector, DIMENSION_2D);
     
     triplets.emplace_back(0, 0, STRONG_CONSTRAINT);
@@ -83,16 +85,22 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
 
     outFile.close();
 #endif
-    
-    // 第二阶段优化
-    cout << "*************第二阶段优化**************" << endl;
-    reserveExtraData(triplets, b_vector, origin_sparse_size);
-
-    prepareLinePreserveTerm(triplets, b_vector, new_vertices);    // 准备全局直线结构保护项
-    
     vector<vector<Point2> > final_vertices;
+
+    if (getLinePreserveTermWeight()) {
+        // 第二阶段优化
+#ifndef NDEBUG
+        cout << "*************第二阶段优化**************" << endl;
+#endif
+        reserveExtraData(triplets, b_vector, origin_sparse_size);
+        
+        prepareLinePreserveTerm(triplets, b_vector, new_vertices);    // 准备全局直线结构保护项
+        
+        final_vertices = getImageVerticesBySolving(triplets, b_vector, false);
+    } else {
+        final_vertices = new_vertices;
+    }
     
-    final_vertices = getImageVerticesBySolving(triplets, b_vector, false);
     
 #ifndef NDEBUG
     outFile.open(multi_images.parameter.temp_dir + multi_images.parameter.file_name + "-line_control_points.txt", ios::app);
@@ -124,12 +132,10 @@ Mat NISwGSP_Stitching::solve(const BLENDING_METHODS & _blend_method) {
                                      GLOBAL_ROTATION_METHODS_NAME[getGlobalRotationMethod()] +
                                      BLENDING_METHODS_NAME[_blend_method] +
                                      "[Border]", true);
-    if (getLinePreserveTermWeight()) {
-        multi_images.writeResultWithLines(result, final_vertices, "-[NISwGSP]" +
+    multi_images.writeResultWithLines(result, final_vertices, "-[NISwGSP]" +
                                           GLOBAL_ROTATION_METHODS_NAME[getGlobalRotationMethod()] +
                                           BLENDING_METHODS_NAME[_blend_method] +
                                           "[LINES]");
-    }
 #endif
     return result;
 }

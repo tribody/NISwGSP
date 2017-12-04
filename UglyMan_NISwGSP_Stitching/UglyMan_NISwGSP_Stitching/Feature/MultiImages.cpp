@@ -890,7 +890,7 @@ vector<pair<int, int> > MultiImages::getFeaturePairsBySequentialRANSAC(const pai
         mask_indices[i] = i;
     }
     int i = 1;
-    // 用外点来估计，防止外点正好是内点的情况？
+    // 用外点来估计，防止初始化的时候选择点错误影响最后的结果
     while(tmp_X.size() >= HOMOGRAPHY_MODEL_MIN_POINTS &&
           parameter.local_homogrpahy_max_inliers_dist < parameter.global_homography_max_inliers_dist) {
         const int LOCAL_MAX_ITERATION = log(1 - OPENCV_DEFAULT_CONFIDENCE) / log(1 - pow(LOCAL_TRUE_PROBABILITY, HOMOGRAPHY_MODEL_MIN_POINTS)); // local_true_probability: 0.2
@@ -1053,7 +1053,7 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
     
     vector<Mat> weight_mask, new_weight_mask;
     vector<Point2> origins;
-    vector<Rect_<FLOAT_TYPE> > rects = getVerticesRects<FLOAT_TYPE>(_vertices);     // 获取图片网格变形后的顶点所在的矩形区域
+    vector<Rect_<FLOAT_TYPE> > rects = getVerticesRects<FLOAT_TYPE>(_vertices);     // 获取图片网格变形后每张图的顶点所在的矩形区域
     
     switch (_blend_method) {
         case BLEND_AVERAGE:
@@ -1083,8 +1083,8 @@ Mat MultiImages::textureMapping(const vector<vector<Point2> > & _vertices,
         const Point2 shift(0.5, 0.5);
         vector<Mat> affine_transforms;
         affine_transforms.reserve(polygons_indices.size() * (images_data[i].mesh_2d->getTriangulationIndices().size()));    // 三角形的个数
-        Mat polygon_index_mask(rects[i].height + shift.y, rects[i].width + shift.x, CV_32SC1, Scalar::all(NO_GRID));
-        int label = 0;
+        Mat polygon_index_mask(rects[i].height + shift.y, rects[i].width + shift.x, CV_32SC1, Scalar::all(NO_GRID));    // initial with no convex polygon
+        int label = 0;  // triangul polygon index
         for(int j = 0; j < polygons_indices.size(); ++j) {
             for(int k = 0; k < images_data[i].mesh_2d->getTriangulationIndices().size(); ++k) {
                 const Indices & index = images_data[i].mesh_2d->getTriangulationIndices()[k];

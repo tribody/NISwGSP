@@ -63,7 +63,7 @@ Mat getImageOfOverlappedMatchingPoints(const Mat & img1,
     assert(img1.type() == img2.type());
     
     const int CIRCLE_RADIUS = 5;
-    const int CIRCLE_THICKNESS = 1;
+    const int CIRCLE_THICKNESS = -1;
     const int LINE_THICKNESS = 1;
     const int RGB_8U_RANGE = 256;
     
